@@ -1,34 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export function useTodo() {
+  const isFirstRender = useRef(true);
+
   const [tasks, setTasks] = useState([]);
 
+  useEffect(() => {
+    const savedTasks = localStorage.getItem("tasks");
+
+    if (savedTasks) {
+      setTasks(JSON.parse(savedTasks));     }
+  }, []);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false; 
+      return; 
+    }
+
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
+
   const addTask = (task) => {
-    if (!task || task.trim() === "") {
-      return;
-    }
+    if (!task || task.trim() === "") return; 
 
-    const newTasks = [...tasks, task];
-
-    setTasks(newTasks);
+    setTasks([...tasks, task]); 
   };
 
-const removeTask = function(index) {
-  const newTasks = [];
-
-  for (let i = 0; i < tasks.length; i++) {
-    if (i !== index) {
-      newTasks.push(tasks[i]);
-    }
-  }
-
-  setTasks(newTasks);
-};
-
-
-  return {
-    tasks,
-    addTask,
-    removeTask,
+  const removeTask = (index) => {
+    const updatedTasks = tasks.filter((_, i) => i !== index);
+    setTasks(updatedTasks);
   };
+
+  return { tasks, addTask, removeTask };
 }
