@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useTodo } from "@/hooks/useTodo";
-
+import { ThemeToggle } from "./theme-toggle";
 import {
   Table,
   TableHeader,
@@ -30,7 +30,10 @@ export function ToDo() {
 
   return (
     <div className="w-full max-w-md mx-auto mt-10 space-y-6">
-
+       <div className="p-4">
+      <ThemeToggle />
+      <h1 className="text-3xl font-bold mt-4">Hello!</h1>
+    </div>
       <Card>
         <CardHeader>
           <CardTitle>Add a Task</CardTitle>
