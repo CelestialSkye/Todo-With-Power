@@ -1,10 +1,8 @@
-import { useEffect, useRef } from "react";
-import gsap from "gsap";
-import { ToDo } from "@/components/ToDo";
+import { ToDo } from "@/components/toDo";
 
 function App() {
   return (
-    <div className="p-10 bg-white-900 min-h-screen">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <ToDo />
     </div>
   );

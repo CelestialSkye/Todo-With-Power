@@ -6,31 +6,43 @@ export function useTodo() {
   const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
-    const savedTasks = localStorage.getItem("tasks");
-
-    if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));     }
+    const saved = localStorage.getItem("tasks");
+    if (saved) setTasks(JSON.parse(saved));
   }, []);
 
   useEffect(() => {
     if (isFirstRender.current) {
-      isFirstRender.current = false; 
-      return; 
+      isFirstRender.current = false;
+      return;
     }
-
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
 
-  const addTask = (task) => {
-    if (!task || task.trim() === "") return; 
+  const addTask = (text) => {
+    if (!text.trim()) return;
 
-    setTasks([...tasks, task]); 
+    const newTask = {
+      id: crypto.randomUUID(),
+      text,
+      parent: "Planned",     
+    };
+
+    setTasks([...tasks, newTask]);
   };
 
-  const removeTask = (index) => {
-    const updatedTasks = tasks.filter((_, i) => i !== index);
-    setTasks(updatedTasks);
+  const removeTask = (id) => {
+    setTasks(tasks.filter((t) => t.id !== id));
   };
 
-  return { tasks, addTask, removeTask };
+  const moveTask = (id, newParent) => {
+    setTasks(
+      tasks.map((t) =>
+        t.id === id
+          ? { ...t, parent: newParent }
+          : t
+      )
+    );
+  };
+
+  return { tasks, addTask, removeTask, moveTask };
 }
