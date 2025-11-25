@@ -7,7 +7,26 @@ export function useTodo() {
 
   useEffect(() => {
     const saved = localStorage.getItem("tasks");
-    if (saved) setTasks(JSON.parse(saved));
+    if (saved) {
+      const parsedTasks = JSON.parse(saved);
+      const tasksWithIds = parsedTasks.map((task) => {
+        if (typeof task === "string") {
+          return {
+            id: crypto.randomUUID(),
+            text: task,
+            parent: "Planned",
+          };
+        }
+        if (!task.id) {
+          return {
+            ...task,
+            id: crypto.randomUUID(),
+          };
+        }
+        return task;
+      });
+      setTasks(tasksWithIds);
+    }
   }, []);
 
   useEffect(() => {
@@ -24,25 +43,26 @@ export function useTodo() {
     const newTask = {
       id: crypto.randomUUID(),
       text,
-      parent: "Planned",     
+      parent: "Planned",
     };
 
     setTasks([...tasks, newTask]);
   };
 
   const removeTask = (id) => {
-    setTasks(tasks.filter((t) => t.id !== id));
+    console.log("called with id", id);
+    console.log("task before delete", tasks);
+    const updated = tasks.filter((t) => t.id !== id);
+    setTasks(updated);
   };
 
   const moveTask = (id, newParent) => {
-    setTasks(
-      tasks.map((t) =>
-        t.id === id
-          ? { ...t, parent: newParent }
-          : t
-      )
-    );
+    setTasks(tasks.map((t) => (t.id === id ? { ...t, parent: newParent } : t)));
   };
 
-  return { tasks, addTask, removeTask, moveTask };
+  const reorderTasks = (newTasks) => {
+    setTasks(newTasks);
+  };
+
+  return { tasks, addTask, removeTask, moveTask, reorderTasks };
 }

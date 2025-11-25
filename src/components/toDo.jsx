@@ -1,10 +1,84 @@
 import { useState } from "react";
 import { useTodo } from "@/hooks/useTodo";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useSortable } from "@dnd-kit/sortable";
+
+function SortableTask({ task, onDelete }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+        isDragging
+          ? "border-dashed border-blue-500 bg-blue-50 dark:bg-blue-900 shadow-lg"
+          : "border-transparent hover:border-blue-500 bg-gray-50 dark:bg-gray-700 hover:shadow-md"
+      }`}
+    >
+      <div
+        {...listeners}
+        className="flex items-center gap-2 flex-1 cursor-grab active:cursor-grabbing"
+      >
+        <div className="h-2 w-2 shrink-0 rounded-full bg-blue-600" />
+        <p className="flex-1 font-medium text-sm text-gray-900 dark:text-white">
+          {task.text}
+        </p>
+      </div>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log("Delete button clicked for id:", task.id);
+          onDelete(task.id);
+        }}
+        className="px-3 py-1 rounded text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+      >
+        Delete
+      </button>
+    </div>
+  );
+}
 
 export function ToDo() {
-  const { tasks, addTask, removeTask } = useTodo();
+  const { tasks, addTask, removeTask, reorderTasks } = useTodo();
   const [inputValue, setInputValue] = useState("");
-  const [draggedIndex, setDraggedIndex] = useState(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      distance: 8,
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   function handleAddTask() {
     if (!inputValue.trim()) return;
@@ -12,32 +86,18 @@ export function ToDo() {
     setInputValue("");
   }
 
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = "move";
-  };
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
+    if (!over || active.id === over.id) return;
 
-  const handleDrop = (e, targetIndex) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === targetIndex) return;
+    const oldIndex = tasks.findIndex((t) => t.id === active.id);
+    const newIndex = tasks.findIndex((t) => t.id === over.id);
 
-    const newTasks = [...tasks];
-    const draggedItem = newTasks[draggedIndex];
-    newTasks.splice(draggedIndex, 1);
-    newTasks.splice(targetIndex, 0, draggedItem);
-
-    localStorage.setItem("tasks", JSON.stringify(newTasks));
-
-    setDraggedIndex(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const newTasks = arrayMove(tasks, oldIndex, newIndex);
+      reorderTasks(newTasks);
+    }
   };
 
   return (
@@ -80,38 +140,32 @@ export function ToDo() {
         </button>
       </div>
 
-      <div className="p-4 space-y-2">
+      <div className="p-4">
         {tasks.length === 0 ? (
           <p className="text-center text-gray-500 dark:text-gray-400">
             No tasks yet
           </p>
         ) : (
-          tasks.map((task, index) => (
-            <div
-              key={index}
-              draggable
-              onDragStart={(e) => handleDragStart(e, index)}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, index)}
-              onDragEnd={handleDragEnd}
-              className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-move transition-all ${
-                draggedIndex === index
-                  ? "opacity-50 border-dashed border-blue-500 bg-blue-50 dark:bg-blue-900"
-                  : "border-transparent hover:border-blue-500 bg-gray-50 dark:bg-gray-700"
-              }`}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={tasks.map((t) => t.id)}
+              strategy={verticalListSortingStrategy}
             >
-              <div className="h-2 w-2 shrink-0 rounded-full bg-blue-600" />
-              <p className="flex-1 font-medium text-sm text-gray-900 dark:text-white">
-                {task}
-              </p>
-              <button
-                onClick={() => removeTask(index)}
-                className="px-3 py-1 rounded text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          ))
+              <div className="space-y-2">
+                {tasks.map((task) => (
+                  <SortableTask
+                    key={task.id}
+                    task={task}
+                    onDelete={removeTask}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
     </div>
