@@ -111,14 +111,14 @@ export function ToDo() {
   };
 
   useLayoutEffect(() => {
-    // Skip animation when deleting
+    // skip animation when deleting
     if (isDeleting.current) {
       isDeleting.current = false;
       prevTaskCount.current = tasks.length;
       return;
     }
 
-    // Animate all tasks on first render
+    // animate all tasks on first render
     if (isFirstRender.current && tasks.length > 0) {
       const allElements = Object.values(taskRefs.current).filter(Boolean);
       if (allElements.length) {
@@ -131,8 +131,8 @@ export function ToDo() {
       }
       isFirstRender.current = false;
       prevTaskCount.current = tasks.length;
-    } 
-    // Animate only new task when added
+    }
+    // animate only new task when added
     else if (tasks.length > prevTaskCount.current) {
       const lastTask = tasks[tasks.length - 1];
       const lastElement = taskRefs.current[lastTask?.id];
@@ -147,54 +147,63 @@ export function ToDo() {
     const element = taskRefs.current[taskId];
     const taskIndex = tasks.findIndex((t) => t.id === taskId);
 
-    if (!element) return;
+    if (!element) return; // prevent more than 1 delete
 
-    // prevent more than 1 delete
     if (element.dataset.deleting === "true") return;
-    element.dataset.deleting = "true";
+    element.dataset.deleting = "true"; // get height of elements that are getting deleted
 
-    // get height of elements that are getting deleted
     const elementHeight = element.offsetHeight;
-    const gap = 8; 
+    const gap = 8;
 
-    // animate the deleted element 
+    // A flag to ensure state update happens once all animations are done
+    let isCleanupComplete = false;
+
+    // Function to run the cleanup and state update
+    const performCleanupAndStateUpdate = () => {
+      if (isCleanupComplete) return;
+      isCleanupComplete = true;
+
+      // Use requestAnimationFrame to ensure React state update happens
+      // after any remaining visual updates are scheduled.
+      requestAnimationFrame(() => {
+        isDeleting.current = true;
+        removeTask(taskId);
+      });
+    }; // animate the deleted element
+
     gsap.to(element, {
       opacity: 0,
       x: -100,
       duration: 0.5,
       ease: "power2.in",
-    });
+      onComplete: () => {
+        gsap.set(element, { display: "none" });
 
-    // get tasks below the deleted ele
+        if (elementsBelowToAnimate.length === 0) {
+          performCleanupAndStateUpdate();
+        }
+      },
+    }); // get tasks below the deleted ele
+
     const tasksBelow = tasks.slice(taskIndex + 1);
     const elementsBelowToAnimate = tasksBelow
       .map((t) => taskRefs.current[t.id])
-      .filter(Boolean);
+      .filter(Boolean); 
 
-    // animate tasks to fill the gap after deletion
     if (elementsBelowToAnimate.length) {
       gsap.to(elementsBelowToAnimate, {
         y: -(elementHeight + gap),
         duration: 0.5,
         ease: "power2.out",
         onComplete: () => {
-          // use requestAnimationFrame to ensure clearing happens before React render
-          requestAnimationFrame(() => {
-            elementsBelowToAnimate.forEach(el => {
-              if (el) gsap.set(el, { clearProps: "y" });
-            });
-            requestAnimationFrame(() => {
-              isDeleting.current = true;
-              removeTask(taskId);
-            });
+     
+          elementsBelowToAnimate.forEach((el) => {
+            if (el) gsap.set(el, { clearProps: "y" });
           });
+
+          performCleanupAndStateUpdate();
         },
       });
-    } else {
-      setTimeout(() => {
-        isDeleting.current = true;
-        removeTask(taskId);
-      }, 500);
     }
   };
 

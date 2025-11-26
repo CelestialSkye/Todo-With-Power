@@ -60,6 +60,7 @@ export function useTodo() {
 
   const reorderTasks = (newTasks) => {
     setTasks(newTasks);
+    
   };
 
   return { tasks, addTask, removeTask, moveTask, reorderTasks };
