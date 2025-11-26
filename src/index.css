@@ -7,3 +7,54 @@
     @apply outline-blue-500/50;
   }
 }
+
+/* Override media query dark mode to use class-based selector */
+@supports selector(html.dark) {
+  @media (prefers-color-scheme: dark) {
+    /* This will override the media query styles with class-based ones */
+  }
+}
+
+html.dark .dark\:text-white {
+  @apply text-white;
+}
+
+html.dark .dark\:text-gray-200 {
+  @apply text-gray-200;
+}
+
+html.dark .dark\:text-gray-400 {
+  @apply text-gray-400;
+}
+
+html.dark .dark\:text-red-400 {
+  @apply text-red-400;
+}
+
+html.dark .dark\:bg-blue-900 {
+  @apply bg-blue-900;
+}
+
+html.dark .dark\:bg-gray-700 {
+  @apply bg-gray-700;
+}
+
+html.dark .dark\:bg-gray-800 {
+  @apply bg-gray-800;
+}
+
+html.dark .dark\:border-gray-600 {
+  @apply border-gray-600;
+}
+
+html.dark .dark\:placeholder-gray-400::placeholder {
+  @apply placeholder-gray-400;
+}
+
+html.dark .dark\:hover\:bg-gray-600:hover {
+  @apply bg-gray-600;
+}
+
+html.dark .dark\:hover\:bg-red-900\/20:hover {
+  @apply bg-red-900/20;
+}

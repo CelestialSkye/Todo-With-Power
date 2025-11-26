@@ -1,10 +1,11 @@
-import { ToDo } from "@/components/toDo";
+import { ToDo } from "@/components/toDo"
+import { ThemeProvider } from 'next-themes';;
 
 function App() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="theme">
       <ToDo />
-    </div>
+    </ThemeProvider>
   );
 }
 

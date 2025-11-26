@@ -1,5 +1,6 @@
 import { useState, useRef, useLayoutEffect } from "react";
 import { useTodo } from "@/hooks/useTodo";
+import { useTheme } from "next-themes";
 import {
   DndContext,
   closestCenter,
@@ -65,7 +66,7 @@ function SortableTask({
           e.stopPropagation();
           onDeleteWithAnimation(task.id);
         }}
-        className="px-3 py-1 rounded text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+        className="px-3 py-1 rounded text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
       >
         Delete
       </button>
@@ -74,6 +75,8 @@ function SortableTask({
 }
 
 export function ToDo() {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+
   const { tasks, addTask, removeTask, reorderTasks } = useTodo();
   const [inputValue, setInputValue] = useState("");
   const taskRefs = useRef({});
@@ -155,15 +158,15 @@ export function ToDo() {
     const elementHeight = element.offsetHeight;
     const gap = 8;
 
-    // A flag to ensure state update happens once all animations are done
+    // a flag to ensure state update happens once all animations are done
     let isCleanupComplete = false;
 
-    // Function to run the cleanup and state update
+    // function to run the cleanup and state update
     const performCleanupAndStateUpdate = () => {
       if (isCleanupComplete) return;
       isCleanupComplete = true;
 
-      // Use requestAnimationFrame to ensure React state update happens
+      // use requestAnimationFrame to ensure react state update happens
       // after any remaining visual updates are scheduled.
       requestAnimationFrame(() => {
         isDeleting.current = true;
@@ -188,7 +191,7 @@ export function ToDo() {
     const tasksBelow = tasks.slice(taskIndex + 1);
     const elementsBelowToAnimate = tasksBelow
       .map((t) => taskRefs.current[t.id])
-      .filter(Boolean); 
+      .filter(Boolean);
 
     if (elementsBelowToAnimate.length) {
       gsap.to(elementsBelowToAnimate, {
@@ -196,7 +199,6 @@ export function ToDo() {
         duration: 0.5,
         ease: "power2.out",
         onComplete: () => {
-     
           elementsBelowToAnimate.forEach((el) => {
             if (el) gsap.set(el, { clearProps: "y" });
           });
@@ -215,18 +217,11 @@ export function ToDo() {
         </h1>
         <button
           onClick={() => {
-            const html = document.documentElement;
-            if (html.classList.contains("dark")) {
-              html.classList.remove("dark");
-              localStorage.setItem("theme", "light");
-            } else {
-              html.classList.add("dark");
-              localStorage.setItem("theme", "dark");
-            }
+            setTheme(resolvedTheme === "light" ? "dark" : "light");
           }}
           className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
         >
-          🌙
+          {resolvedTheme === "dark" ? "☀️" : "🌙"}
         </button>
       </div>
 
