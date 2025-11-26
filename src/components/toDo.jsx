@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEffect, useRef, useLayoutEffect } from "react";
 import { useTodo } from "@/hooks/useTodo";
 import {
   DndContext,
@@ -8,6 +9,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import gsap from "gsap";
 import {
   arrayMove,
   SortableContext,
@@ -17,7 +19,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useSortable } from "@dnd-kit/sortable";
 
-function SortableTask({ task, onDelete }) {
+function SortableTask({ task, onDelete, onDeleteWithAnimation }) {
   const {
     attributes,
     listeners,
@@ -56,8 +58,7 @@ function SortableTask({ task, onDelete }) {
       <button
         onClick={(e) => {
           e.stopPropagation();
-          console.log("Delete button clicked for id:", task.id);
-          onDelete(task.id);
+      onDeleteWithAnimation(task.id);
         }}
         className="px-3 py-1 rounded text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
       >
@@ -97,6 +98,48 @@ export function ToDo() {
     if (oldIndex !== -1 && newIndex !== -1) {
       const newTasks = arrayMove(tasks, oldIndex, newIndex);
       reorderTasks(newTasks);
+    }
+  };
+  //trying gsap
+  const taskRefs = useRef([]);
+  const isFirstRender = useRef(true);
+
+  useLayoutEffect(() => {
+    if (isFirstRender.current && tasks.length > 0) {
+      const allElements = Object.values(taskRefs.current).filter(Boolean);
+      console.log(allElements);
+      if (allElements.length) {
+        gsap.from(allElements, {
+          opacity: 0,
+          y: 100,
+          duration: 1,
+          stagger: 0.1,
+        });
+      }
+      isFirstRender.current = false;
+    } else {
+      const lastTask = tasks[tasks.length - 1];
+      console.log(lastTask);
+      const lastElement = taskRefs.current[lastTask?.id];
+      if (lastElement) {
+        gsap.from(lastElement, { opacity: 0, y: 100, duration: 1 });
+      }
+    }
+  }, [tasks.length]);
+
+  //deleting with gsap
+  const handleGSAPdelete = (taskId) => {
+    const element = taskRefs.current[taskId];
+
+    if (element) {
+      gsap.to(element, {
+        opacity: 0,
+        y: -100,
+        duration: 0.5,
+        onComplete: () => removeTask(taskId),
+      });
+    } else {
+      removeTask(taskId);
     }
   };
 
@@ -157,11 +200,20 @@ export function ToDo() {
             >
               <div className="space-y-2">
                 {tasks.map((task) => (
-                  <SortableTask
+                  <div
                     key={task.id}
-                    task={task}
-                    onDelete={removeTask}
-                  />
+                    ref={(el) => {
+                      if (el) taskRefs.current[task.id] = el;
+                    }}
+                  >
+                    <SortableTask
+                      key={task.id}
+                      task={task}
+                      onDelete={removeTask}
+                      onDeleteWithAnimation={handleGSAPdelete}
+
+                    />
+                  </div>
                 ))}
               </div>
             </SortableContext>
