@@ -50,8 +50,6 @@ export function useTodo() {
   };
 
   const removeTask = (id) => {
-    console.log("called with id", id);
-    console.log("task before delete", tasks);
     const updated = tasks.filter((t) => t.id !== id);
     setTasks(updated);
   };
