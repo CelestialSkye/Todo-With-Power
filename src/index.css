@@ -8,12 +8,7 @@
   }
 }
 
-/* Override media query dark mode to use class-based selector */
-@supports selector(html.dark) {
-  @media (prefers-color-scheme: dark) {
-    /* This will override the media query styles with class-based ones */
-  }
-}
+
 
 html.dark .dark\:text-white {
   @apply text-white;

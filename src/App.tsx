@@ -3,7 +3,7 @@ import { ThemeProvider } from 'next-themes';;
 
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="theme">
+    <ThemeProvider attribute="class" defaultTheme="light" storageKey="theme">
       <ToDo />
     </ThemeProvider>
   );

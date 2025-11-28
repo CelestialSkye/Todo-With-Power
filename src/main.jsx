@@ -5,7 +5,7 @@ import App from "./App";
 
 // Initialize dark mode from localStorage
 const savedTheme = localStorage.getItem("theme");
-if (savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+if (savedTheme === "dark") {
   document.documentElement.classList.add("dark");
 }
 
