@@ -1,14 +1,12 @@
-
 const Groq = require('groq-sdk');
 
-const groq = new Groq(); 
+console.log("GROQ_API_KEY loaded:", !!process.env.GROQ_API_KEY);
+const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY
+}); 
 
-const MODEL = 'mixtral-8x7b-32768';
-/**
- * Communicates with the groq api
- * @param {Array<Object>} messages - The conversation history and context
- * @returns {Promise<string>} The AI's response text.
- */
+const MODEL = 'llama-3.1-8b-instant';
+
 async function getChatCompletion(messages) {
     try {
         const chatCompletion = await groq.chat.completions.create({
@@ -19,8 +17,9 @@ async function getChatCompletion(messages) {
 
         return chatCompletion.choices[0]?.message?.content || "AI is currently unavailable.";
     } catch (error) {
-        console.error("Groq API Error:", error);
-        throw new Error("Failed to get response from Groq AI. Check your API key and connection.");
+        console.error("Groq API Error:", error.message);
+        console.error("Error details:", error);
+        throw error;
     }
 }
 
