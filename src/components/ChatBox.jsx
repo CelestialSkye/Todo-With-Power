@@ -34,15 +34,20 @@ const ChatBox = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ userMessage: userMessage }),
+                body: JSON.stringify({ 
+                    userMessage: userMessage,
+                    conversationHistory: messages
+                }),
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            const data = await response.json();
-            const aiText = data.aiResponse || 'Sorry, I received an unexpected response from the AI.';
-            setMessages(prev => [...prev, { role: 'ai', text: aiText }]);
+             if (!response.ok) {
+                 throw new Error(`HTTP error! Status: ${response.status}`);
+             }
+             const data = await response.json();
+             console.log('Full response data:', data);
+             console.log('response value:', data.response);
+              const aiText = data.response || 'Sorry, I received an unexpected response from the AI.';
+             setMessages(prev => [...prev, { role: 'ai', text: aiText }]);
 
         } catch (error) {
             console.error('API Error:', error);
