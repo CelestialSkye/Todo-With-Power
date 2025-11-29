@@ -1,67 +1,51 @@
-import { useState, useEffect, useRef } from "react";
+import { useFirestore } from './useFirestore';
 
-export function useTodo() {
-  const isFirstRender = useRef(true);
+export const useTodos = () => {
+    const { 
+        data: tasks, 
+        isLoading, 
+        error, 
+        addDocument, 
+        updateDocument, 
+        deleteDocument 
+    } = useFirestore('todos');
 
-  const [tasks, setTasks] = useState([]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("tasks");
-    if (saved) {
-      const parsedTasks = JSON.parse(saved);
-      const tasksWithIds = parsedTasks.map((task) => {
-        if (typeof task === "string") {
-          return {
-            id: crypto.randomUUID(),
-            text: task,
-            parent: "Planned",
-          };
-        }
-        if (!task.id) {
-          return {
-            ...task,
-            id: crypto.randomUUID(),
-          };
-        }
-        return task;
-      });
-      setTasks(tasksWithIds);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
-
-  const addTask = (text) => {
-    if (!text.trim()) return;
-
-    const newTask = {
-      id: crypto.randomUUID(),
-      text,
-      parent: "Planned",
+    const addTask = async (text) => {
+        if (!text.trim()) return;
+        await addDocument({
+            text: text.trim(),
+            completed: false,
+        });
     };
 
-    setTasks([...tasks, newTask]);
-  };
+    const toggleTask = async (id, currentStatus) => {
+        await updateDocument(id, { completed: !currentStatus });
+    };
 
-  const removeTask = (id) => {
-    const updated = tasks.filter((t) => t.id !== id);
-    setTasks(updated);
-  };
+    const moveTask = async (id, newParent) => {
+        await updateDocument(id, { parent: newParent });
+    };
 
-  const moveTask = (id, newParent) => {
-    setTasks(tasks.map((t) => (t.id === id ? { ...t, parent: newParent } : t)));
-  };
+    const removeTask = async (id) => {
+        await deleteDocument(id);
+    };
 
-  const reorderTasks = (newTasks) => {
-    setTasks(newTasks);
-    
-  };
+    const reorderTasks = async (orderedTasks) => {
+        for (let i = 0; i < orderedTasks.length; i++) {
+            await updateDocument(orderedTasks[i].id, { order: i });
+        }
+    };
 
-  return { tasks, addTask, removeTask, moveTask, reorderTasks };
-}
+    return { 
+        tasks, 
+        isLoading, 
+        error, 
+        addTask, 
+        toggleTask, 
+        moveTask, 
+        removeTask,
+        reorderTasks
+    };
+};
+
+export const useTodo = useTodos;

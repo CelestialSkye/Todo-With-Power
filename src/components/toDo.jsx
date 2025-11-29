@@ -1,5 +1,5 @@
 import { useState, useRef, useLayoutEffect } from "react";
-import { useTodo } from "@/hooks/useTodo";
+import { useTodos } from "@/hooks/useTodo";
 import { useTheme } from "next-themes";
 import {
   DndContext,
@@ -77,7 +77,7 @@ function SortableTask({
 export function ToDo() {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
-  const { tasks, addTask, removeTask, reorderTasks } = useTodo();
+  const { tasks, addTask, removeTask, reorderTasks } = useTodos();
   const [inputValue, setInputValue] = useState("");
   const taskRefs = useRef({});
   const isFirstRender = useRef(true);

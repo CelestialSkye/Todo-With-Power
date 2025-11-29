@@ -1,164 +1,223 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Cpu, User, MessageSquare, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { Send, Cpu, User, MessageSquare, X, Trash2 } from "lucide-react";
 
 const ChatBox = () => {
-    const [messages, setMessages] = useState([
-        { role: 'ai', text: 'Hello, I am the control devil Makima. Ask me a question about the world or the future.' }
+  const [messages, setMessages] = useState([
+    {
+      role: "ai",
+      text: "Hello",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+
+  const messagesEndRef = useRef(null);
+
+  const clearChat = () => {
+    setMessages([
+      {
+        role: "ai",
+        text: "Chat cleared. What would you like to talk about?",
+      },
     ]);
-    const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [isOpen, setIsOpen] = useState(true);
+  };
 
-    const messagesEndRef = useRef(null);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); 
-    };
+  useEffect(scrollToBottom, [messages]);
+  const MAX_HISTORY_LENGTH = 10;
+  const sendMessage = async (e) => {
+    e.preventDefault();
 
-    useEffect(scrollToBottom, [messages]); 
+    if (!input.trim() || isLoading) return;
+    const userMessageText = input.trim();
+    const userMessage = input.trim();
+    const newUserMessage = { role: "user", text: userMessageText };
+    const conversationWithNewMessage = [...messages, newUserMessage];
+    const startIndex = Math.max(
+      0,
+      conversationWithNewMessage.length - MAX_HISTORY_LENGTH
+    );
+    const conversationToSend = conversationWithNewMessage.slice(startIndex);
 
-    const sendMessage = async (e) => {
-        e.preventDefault();
-        
-        if (!input.trim() || isLoading) return;
+    console.log("Sending to backend:", { 
+      userMessage: userMessageText,
+      conversationHistory: conversationToSend 
+    });
 
-        const userMessage = input.trim();
-        
-        setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
-        setInput('');
-        setIsLoading(true);
+    setMessages(conversationWithNewMessage);
+    setInput("");
+    setIsLoading(true);
 
-        try {
-            const response = await fetch('http://localhost:8000/api/chat', { 
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    userMessage: userMessage,
-                    conversationHistory: messages
-                }),
-            });
+    try {
+      const response = await fetch("http://localhost:8000/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          userMessage: userMessageText,
+          conversationHistory: conversationToSend 
+        }),
+      });
 
-             if (!response.ok) {
-                 throw new Error(`HTTP error! Status: ${response.status}`);
-             }
-             const data = await response.json();
-             console.log('Full response data:', data);
-             console.log('response value:', data.response);
-              const aiText = data.response || 'Sorry, I received an unexpected response from the AI.';
-             setMessages(prev => [...prev, { role: 'ai', text: aiText }]);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("Full response data:", data);
+      console.log("response value:", data.response);
+      const aiText =
+        data.response ||
+        "Sorry, I received an unexpected response from the AI.";
+      setMessages((prev) => [...prev, { role: "ai", text: aiText }]);
+    } catch (error) {
+      console.error("API Error:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "system",
+          text: `Error: Failed to connect to the server. Check console for details. ${error.message}`,
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        } catch (error) {
-            console.error('API Error:', error);
-            setMessages(prev => [...prev, { 
-                role: 'system', 
-                text: `Error: Failed to connect to the server. Check console for details. ${error.message}` 
-            }]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const Message = ({ message }) => {
+    const isUser = message.role === "user";
+    const isSystem = message.role === "system";
 
-    const Message = ({ message }) => {
-        const isUser = message.role === 'user';
-        const isSystem = message.role === 'system';
+    const baseClasses =
+      "max-w-[85%] p-3 my-2 rounded-xl shadow-md flex items-start space-x-3";
 
-        const baseClasses = "max-w-[85%] p-3 my-2 rounded-xl shadow-md flex items-start space-x-3";
-        
-        const messageClasses = isUser
-          ? "bg-indigo-500 text-white self-end rounded-br-none ml-auto"
-          : isSystem
-            ? "bg-red-100 text-red-800 border border-red-300 rounded-bl-none"
-            : "bg-white text-gray-800 self-start rounded-bl-none mr-auto border border-gray-200";
+    const messageClasses = isUser
+      ? "bg-indigo-500 text-white self-end rounded-br-none ml-auto"
+      : isSystem
+      ? "bg-red-100 text-red-800 border border-red-300 rounded-bl-none"
+      : "bg-white text-gray-800 self-start rounded-bl-none mr-auto border border-gray-200";
 
-        const IconComponent = isUser ? User : Cpu;
-        const iconColor = isUser ? "text-indigo-200" : isSystem ? "text-red-500" : "text-indigo-500";
-        
-        return (
-          <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
-            <div className={`${baseClasses} ${messageClasses} ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-              <IconComponent className={`w-5 h-5 flex-shrink-0 ${iconColor}`} />
-              <p className="whitespace-pre-wrap leading-relaxed">
-                {message.text}
-              </p>
-            </div>
-          </div>
-        );
-    };
+    const IconComponent = isUser ? User : Cpu;
+    const iconColor = isUser
+      ? "text-indigo-200"
+      : isSystem
+      ? "text-red-500"
+      : "text-indigo-500";
 
     return (
-        <div className="relative w-full h-screen bg-gray-50/50">
-            
-            <div 
-                className={`
+      <div
+        className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
+      >
+        <div
+          className={`${baseClasses} ${messageClasses} ${
+            isUser ? "flex-row-reverse" : "flex-row"
+          }`}
+        >
+          <IconComponent className={`w-5 h-5 flex-shrink-0 ${iconColor}`} />
+          <p className="whitespace-pre-wrap leading-relaxed">{message.text}</p>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="relative w-full h-screen bg-gray-50/50">
+      <div
+        className={`
                     fixed bottom-24 right-6 z-50 
-                    ${isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}
+                    ${
+                      isOpen
+                        ? "opacity-100 translate-y-0 pointer-events-auto"
+                        : "opacity-0 translate-y-4 pointer-events-none"
+                    }
                     transition-all duration-300 ease-in-out
                     w-80 h-[28rem] sm:w-96 sm:h-[32rem]
                     max-w-[90vw]
                 `}
-            >
-                <div className="w-full h-full flex flex-col bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100">
-                    
-                    <header className="bg-indigo-600 p-3 text-white text-lg font-semibold flex items-center justify-between shadow-md">
-                        <h1 className="flex items-center space-x-2">
-                            <Cpu className="w-5 h-5" />
-                            <span>AI Assistant</span>
-                        </h1>
-                        <button onClick={() => setIsOpen(false)} className="p-1 rounded-full hover:bg-indigo-500 transition">
-                            <X className="w-5 h-5" />
-                        </button>
-                    </header>
+      >
+        <div className="w-full h-full flex flex-col bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100">
+           <header className="bg-indigo-600 p-3 text-white text-lg font-semibold flex items-center justify-between shadow-md">
+             <h1 className="flex items-center space-x-2">
+               <Cpu className="w-5 h-5" />
+               <span>AI Assistant</span>
+             </h1>
+             <div className="flex items-center space-x-1">
+               <button
+                 onClick={clearChat}
+                 className="p-1 rounded-full hover:bg-indigo-500 transition"
+                 title="Clear chat history"
+               >
+                 <Trash2 className="w-5 h-5" />
+               </button>
+               <button
+                 onClick={() => setIsOpen(false)}
+                 className="p-1 rounded-full hover:bg-indigo-500 transition"
+               >
+                 <X className="w-5 h-5" />
+               </button>
+             </div>
+           </header>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                        {messages.map((msg, index) => (
-                            <Message key={index} message={msg} />
-                        ))}
-                        
-                        {isLoading && (
-                            <div className="flex justify-start">
-                                <div className="bg-white p-3 my-2 rounded-xl shadow-md rounded-bl-none flex items-center space-x-2 border border-gray-200">
-                                    <Cpu className="w-5 h-5 text-indigo-500 animate-pulse" />
-                                    <span className="text-sm text-gray-600">AI is typing...</span>
-                                </div>
-                            </div>
-                        )}
-                        
-                        <div ref={messagesEndRef} />
-                    </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            {messages.map((msg, index) => (
+              <Message key={index} message={msg} />
+            ))}
 
-                    <form onSubmit={sendMessage} className="p-3 bg-white border-t border-gray-200">
-                        <div className="flex space-x-2">
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                placeholder={isLoading ? "Waiting for response..." : "Ask me a question..."}
-                                disabled={isLoading}
-                                className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 shadow-inner text-sm disabled:bg-gray-100"
-                            />
-                            <button
-                                type="submit"
-                                disabled={isLoading || !input.trim()}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 disabled:bg-indigo-300 transition duration-150 flex items-center justify-center text-sm font-medium"
-                            >
-                                <Send className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </form>
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-white p-3 my-2 rounded-xl shadow-md rounded-bl-none flex items-center space-x-2 border border-gray-200">
+                  <Cpu className="w-5 h-5 text-indigo-500 animate-pulse" />
+                  <span className="text-sm text-gray-600">AI is typing...</span>
                 </div>
-            </div>
-            
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="fixed bottom-6 right-6 p-4 bg-indigo-600 text-white rounded-full shadow-2xl hover:bg-indigo-700 transition duration-300 transform hover:scale-105 z-50 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50"
-            >
-                {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
-            </button>
+              </div>
+            )}
 
+            <div ref={messagesEndRef} />
+          </div>
+
+          <form
+            onSubmit={sendMessage}
+            className="p-3 bg-white border-t border-gray-200"
+          >
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={
+                  isLoading ? "Waiting for response..." : "Ask me a question..."
+                }
+                disabled={isLoading}
+                className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 shadow-inner text-sm disabled:bg-gray-100"
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !input.trim()}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 disabled:bg-indigo-300 transition duration-150 flex items-center justify-center text-sm font-medium"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </form>
         </div>
-    );
+      </div>
+
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed bottom-6 right-6 p-4 bg-indigo-600 text-white rounded-full shadow-2xl hover:bg-indigo-700 transition duration-300 transform hover:scale-105 z-50 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50"
+      >
+        {isOpen ? (
+          <X className="w-6 h-6" />
+        ) : (
+          <MessageSquare className="w-6 h-6" />
+        )}
+      </button>
+    </div>
+  );
 };
 
 export default ChatBox;
