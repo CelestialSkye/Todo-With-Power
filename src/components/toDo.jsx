@@ -22,6 +22,7 @@ import { useSortable } from "@dnd-kit/sortable";
 function SortableTask({
   task,
   onDelete,
+  onComplete,
   onDeleteWithAnimation,
   taskRefs,
   tasks,
@@ -58,7 +59,13 @@ function SortableTask({
       >
         <div className="h-2 w-2 shrink-0 rounded-full bg-blue-600" />
         <p className="flex-1 font-medium text-sm text-gray-900 dark:text-white">
-          {task.text}
+          <span 
+                className={`flex-1 mr-4 text-sm font-medium transition ${
+                    task.completed ? 'line-through text-gray-500' : 'text-gray-800'
+                }`}
+            >
+                {task.text}
+            </span>
         </p>
       </div>
       <button
@@ -70,6 +77,15 @@ function SortableTask({
       >
         Delete
       </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onComplete(task.id, task.completed);
+        }}
+        className="px-3 py-1 rounded text-sm text-yellow-600 dark:text-yellow-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+      >
+        Complete
+      </button>
     </div>
   );
 }
@@ -77,12 +93,13 @@ function SortableTask({
 export function ToDo() {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
-  const { tasks, addTask, removeTask, reorderTasks } = useTodos();
+   const { tasks, addTask, removeTask, reorderTasks, toggleTask } = useTodos();
   const [inputValue, setInputValue] = useState("");
   const taskRefs = useRef({});
   const isFirstRender = useRef(true);
   const isDeleting = useRef(false);
   const prevTaskCount = useRef(0);
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -266,12 +283,13 @@ export function ToDo() {
                     }}
                   >
                     <SortableTask
-                      task={task}
-                      onDelete={removeTask}
-                      onDeleteWithAnimation={handleGSAPdelete}
-                      taskRefs={taskRefs}
-                      tasks={tasks}
-                    />
+                       task={task}
+                       onDelete={removeTask}
+                       onComplete={toggleTask}
+                       onDeleteWithAnimation={handleGSAPdelete}
+                       taskRefs={taskRefs}
+                       tasks={tasks}
+                     />
                   </div>
                 ))}
               </div>

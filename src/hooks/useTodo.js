@@ -30,6 +30,11 @@ export const useTodos = () => {
         await deleteDocument(id);
     };
 
+    const completedTask = async(id) => {
+               await updateDocument(id, { completed: true });
+ 
+    }
+
     const reorderTasks = async (orderedTasks) => {
         for (let i = 0; i < orderedTasks.length; i++) {
             await updateDocument(orderedTasks[i].id, { order: i });
@@ -44,7 +49,8 @@ export const useTodos = () => {
         toggleTask, 
         moveTask, 
         removeTask,
-        reorderTasks
+        reorderTasks,
+        completedTask
     };
 };
 

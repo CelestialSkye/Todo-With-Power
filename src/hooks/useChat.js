@@ -1,5 +1,7 @@
 import { useFirestore } from "./useFirestore";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useTodos } from "./useTodo";
+import { useRef } from "react";
 
 export const useChat = () => {
   const {
@@ -12,6 +14,9 @@ export const useChat = () => {
 
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
+  const { tasks: todoList } = useTodos();
+
+  const previousTasksRef = useRef([]);
 
   const sortedMessages = messages
     ? [...messages].sort((a, b) => {
@@ -19,20 +24,23 @@ export const useChat = () => {
       })
     : [];
 
-  const sendMessage = async (userMessage) => {
+  const sendMessage = async (userMessage, isProactive = false) => {
+    console.log("sendMessage called with:", userMessage);
+    console.log("todoList:", todoList);
+
     if (!userMessage.trim() || isApiLoading) return;
 
     const messageText = userMessage.trim();
     setIsApiLoading(true);
     setApiError(null);
-
-    const userPayload = {
-      text: messageText,
-      role: "user",
-      createdAt: new Date().toISOString(),
-    };
-    await addDocument(userPayload);
-
+    if (!isProactive) {
+      const userPayload = {
+        text: messageText,
+        role: "user",
+        createdAt: new Date().toISOString(),
+      };
+      await addDocument(userPayload);
+    }
     try {
       const historyPayload = {
         userMessage: messageText,
@@ -40,7 +48,10 @@ export const useChat = () => {
           role: msg.role,
           text: msg.text,
         })),
+        todoList: todoList,
       };
+
+      console.log("Sending payload:", historyPayload);
 
       const response = await fetch("http://localhost:8000/api/chat", {
         method: "POST",
@@ -50,14 +61,15 @@ export const useChat = () => {
         body: JSON.stringify(historyPayload),
       });
 
+      console.log("Response status:", response.status);
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
       const data = await response.json();
       const aiText =
-        data.response ||
-        "I received an unexpected response from the AI.";
+        data.response || "I received an unexpected response from the AI.";
 
       const aiPayload = {
         text: aiText,
@@ -78,6 +90,42 @@ export const useChat = () => {
       setIsApiLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (
+      !todoList ||
+      (todoList.length === 0 && previousTasksRef.current.length === 0)
+    ) {
+      previousTasksRef.current = todoList || [];
+      return;
+    }
+
+    const prevTasks = previousTasksRef.current;
+    const currentTasks = todoList;
+    //detect task added
+    if (currentTasks.length > prevTasks.length) {
+      const newTask = currentTasks.find(
+        (t) => !prevTasks.some((pt) => pt.id === t.id)
+      );
+      if (newTask) {
+        const proactiveMessage = `A new task has been added to the list: "${newTask.text}". Please comment on this addition.`;
+        sendMessage(proactiveMessage ,true);
+      }
+    }
+
+    //detect task deleted
+    if (currentTasks.length < prevTasks.length) {
+      const deletedTask = prevTasks.find(
+        (t) => !currentTasks.some((ct) => ct.id === t.id)
+      );
+      if (deletedTask) {
+        const proactiveMessage = `A task was just eliminated from the list: "${deletedTask.text}". Acknowledge the deletion with a short, commanding comment.`;
+        sendMessage(proactiveMessage ,true);
+      }
+    }
+
+    previousTasksRef.current = currentTasks;
+  }, [todoList]);
 
   const clearChat = async () => {
     for (const message of sortedMessages) {
