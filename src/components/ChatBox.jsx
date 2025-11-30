@@ -1,91 +1,26 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Send, Cpu, User, MessageSquare, X, Trash2 } from "lucide-react";
+import { useChat } from "../hooks/useChat";
 
 const ChatBox = () => {
-  const [messages, setMessages] = useState([
-    {
-      role: "ai",
-      text: "Hello",
-    },
-  ]);
+  const { messages, isLoading, error, sendMessage, clearChat } = useChat();
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
 
   const messagesEndRef = useRef(null);
-
-  const clearChat = () => {
-    setMessages([
-      {
-        role: "ai",
-        text: "Chat cleared. What would you like to talk about?",
-      },
-    ]);
-  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(scrollToBottom, [messages]);
-  const MAX_HISTORY_LENGTH = 10;
-  const sendMessage = async (e) => {
+
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-
     if (!input.trim() || isLoading) return;
-    const userMessageText = input.trim();
-    const userMessage = input.trim();
-    const newUserMessage = { role: "user", text: userMessageText };
-    const conversationWithNewMessage = [...messages, newUserMessage];
-    const startIndex = Math.max(
-      0,
-      conversationWithNewMessage.length - MAX_HISTORY_LENGTH
-    );
-    const conversationToSend = conversationWithNewMessage.slice(startIndex);
-
-    console.log("Sending to backend:", { 
-      userMessage: userMessageText,
-      conversationHistory: conversationToSend 
-    });
-
-    setMessages(conversationWithNewMessage);
+    
+    await sendMessage(input);
     setInput("");
-    setIsLoading(true);
-
-    try {
-      const response = await fetch("http://localhost:8000/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          userMessage: userMessageText,
-          conversationHistory: conversationToSend 
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log("Full response data:", data);
-      console.log("response value:", data.response);
-      const aiText =
-        data.response ||
-        "Sorry, I received an unexpected response from the AI.";
-      setMessages((prev) => [...prev, { role: "ai", text: aiText }]);
-    } catch (error) {
-      console.error("API Error:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "system",
-          text: `Error: Failed to connect to the server. Check console for details. ${error.message}`,
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const Message = ({ message }) => {
@@ -143,7 +78,7 @@ const ChatBox = () => {
            <header className="bg-indigo-600 p-3 text-white text-lg font-semibold flex items-center justify-between shadow-md">
              <h1 className="flex items-center space-x-2">
                <Cpu className="w-5 h-5" />
-               <span>AI Assistant</span>
+               <span>Ai</span>
              </h1>
              <div className="flex items-center space-x-1">
                <button
@@ -163,9 +98,17 @@ const ChatBox = () => {
            </header>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-            {messages.map((msg, index) => (
-              <Message key={index} message={msg} />
-            ))}
+            {messages.length === 0 ? (
+              <div className="flex justify-start">
+                <div className="bg-white p-3 my-2 rounded-xl shadow-md rounded-bl-none text-gray-500 border border-gray-200">
+                  No messages yet. Start a conversation!
+                </div>
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <Message key={msg.id} message={msg} />
+              ))
+            )}
 
             {isLoading && (
               <div className="flex justify-start">
@@ -176,11 +119,19 @@ const ChatBox = () => {
               </div>
             )}
 
+            {error && (
+              <div className="flex justify-start">
+                <div className="bg-red-100 p-3 my-2 rounded-xl shadow-md rounded-bl-none text-red-800 border border-red-300">
+                  Error: {error}
+                </div>
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 
           <form
-            onSubmit={sendMessage}
+            onSubmit={handleSendMessage}
             className="p-3 bg-white border-t border-gray-200"
           >
             <div className="flex space-x-2">
