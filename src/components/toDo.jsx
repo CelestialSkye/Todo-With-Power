@@ -58,23 +58,22 @@ function SortableTask({
     >
       <div
         {...listeners}
-        className="flex items-center gap-2 flex-1 cursor-grab active:cursor-grabbing"
+        className="flex items-start gap-2 flex-1 cursor-grab active:cursor-grabbing"
       >
         <div
-          className={`h-2 w-2 shrink-0 rounded-full transition-colors ${
+          className={`h-2 w-2 shrink-0 rounded-full transition-colors mt-1 ${
             task.completed ? "bg-green-500" : "bg-blue-600"
           }`}
         />
         <p
-      
-      className={`min-w-0 text-wrap wrap-break-words font-medium text-sm transition-colors duration-200 ${
-        task.completed
-          ? "line-through text-gray-400 dark:text-gray-500"
-          : "text-gray-900 dark:text-white"
-      }`}
-    >
-      {task.text}
-    </p>
+          className={`break-words font-medium text-sm transition-colors duration-200 ${
+            task.completed
+              ? "line-through text-gray-400 dark:text-gray-500"
+              : "text-gray-900 dark:text-white"
+          }`}
+        >
+          {task.text}
+        </p>
       </div>
 
       <button
