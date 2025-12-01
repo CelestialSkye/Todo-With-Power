@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { useFirestore } from './useFirestore';
 
 export const useTodos = () => {
     const { 
-        data: tasks, 
+        data: rawTasks, 
         isLoading, 
         error, 
         addDocument, 
@@ -10,11 +11,23 @@ export const useTodos = () => {
         deleteDocument 
     } = useFirestore('todos');
 
+    // Sort tasks by order field (fallback to createdAt if no order field)
+    const tasks = useMemo(() => {
+        return [...(rawTasks || [])].sort((a, b) => {
+            const orderA = a.order !== undefined ? a.order : Infinity;
+            const orderB = b.order !== undefined ? b.order : Infinity;
+            if (orderA !== orderB) return orderA - orderB;
+            // Fallback to createdAt if order is the same
+            return new Date(a.createdAt) - new Date(b.createdAt);
+        });
+    }, [rawTasks]);
+
     const addTask = async (text) => {
         if (!text.trim()) return;
         await addDocument({
             text: text.trim(),
             completed: false,
+            order: tasks.length,
         });
     };
 
@@ -30,9 +43,15 @@ export const useTodos = () => {
         await deleteDocument(id);
     };
 
-    const completedTask = async(id) => {
-               await updateDocument(id, { completed: true });
- 
+    const removeAllTasks = async(id) => {
+        if(!tasks || tasks.length === 0){
+            return;
+        }
+
+        const deletePromises = tasks.map(task => 
+            removeTask(task.id)
+        );
+        await Promise.all(deletePromises);
     }
 
     const reorderTasks = async (orderedTasks) => {
@@ -50,7 +69,7 @@ export const useTodos = () => {
         moveTask, 
         removeTask,
         reorderTasks,
-        completedTask
+        removeAllTasks
     };
 };
 

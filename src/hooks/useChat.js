@@ -1,5 +1,5 @@
 import { useFirestore } from "./useFirestore";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTodos } from "./useTodo";
 import { useRef } from "react";
 
@@ -24,15 +24,13 @@ export const useChat = () => {
       })
     : [];
 
-  const sendMessage = async (userMessage, isProactive = false) => {
-    console.log("sendMessage called with:", userMessage);
-    console.log("todoList:", todoList);
-
+  const sendMessage = useCallback(async (userMessage, isProactive = false) => {
     if (!userMessage.trim() || isApiLoading) return;
 
     const messageText = userMessage.trim();
     setIsApiLoading(true);
     setApiError(null);
+    
     if (!isProactive) {
       const userPayload = {
         text: messageText,
@@ -41,6 +39,7 @@ export const useChat = () => {
       };
       await addDocument(userPayload);
     }
+
     try {
       const historyPayload = {
         userMessage: messageText,
@@ -48,10 +47,7 @@ export const useChat = () => {
           role: msg.role,
           text: msg.text,
         })),
-        todoList: todoList,
       };
-
-      console.log("Sending payload:", historyPayload);
 
       const response = await fetch("http://localhost:8000/api/chat", {
         method: "POST",
@@ -61,15 +57,14 @@ export const useChat = () => {
         body: JSON.stringify(historyPayload),
       });
 
-      console.log("Response status:", response.status);
-
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
       const data = await response.json();
       const aiText =
-        data.response || "I received an unexpected response from the AI.";
+        data.response ||
+        "I received an unexpected response from the AI.";
 
       const aiPayload = {
         text: aiText,
@@ -89,7 +84,7 @@ export const useChat = () => {
     } finally {
       setIsApiLoading(false);
     }
-  };
+  }, [isApiLoading, sortedMessages, addDocument]);
 
   useEffect(() => {
     if (
@@ -102,30 +97,36 @@ export const useChat = () => {
 
     const prevTasks = previousTasksRef.current;
     const currentTasks = todoList;
-    //detect task added
-    if (currentTasks.length > prevTasks.length) {
-      const newTask = currentTasks.find(
-        (t) => !prevTasks.some((pt) => pt.id === t.id)
-      );
-      if (newTask) {
-        const proactiveMessage = `A new task has been added to the list: "${newTask.text}". Please comment on this addition.`;
-        sendMessage(proactiveMessage ,true);
-      }
+    
+    //detect all tasks deleted
+    if (currentTasks.length === 0 && prevTasks.length > 0) {
+      const totalDeleted = prevTasks.length;
+      const proactiveMessage = `The entire list has been purged! All ${totalDeleted} tasks have been removed. The slate is clean.`;
+      sendMessage(proactiveMessage, true);
     }
-
-    //detect task deleted
-    if (currentTasks.length < prevTasks.length) {
+    //detect single task deleted
+    else if (currentTasks.length < prevTasks.length) {
       const deletedTask = prevTasks.find(
         (t) => !currentTasks.some((ct) => ct.id === t.id)
       );
       if (deletedTask) {
         const proactiveMessage = `A task was just eliminated from the list: "${deletedTask.text}". Acknowledge the deletion with a short, commanding comment.`;
-        sendMessage(proactiveMessage ,true);
+        sendMessage(proactiveMessage, true);
+      }
+    }
+    //detect task added
+    else if (currentTasks.length > prevTasks.length) {
+      const newTask = currentTasks.find(
+        (t) => !prevTasks.some((pt) => pt.id === t.id)
+      );
+      if (newTask) {
+        const proactiveMessage = `A new task has been added to the list: "${newTask.text}". Please comment on this addition.`;
+        sendMessage(proactiveMessage, true);
       }
     }
 
     previousTasksRef.current = currentTasks;
-  }, [todoList]);
+  }, [todoList, sendMessage]);
 
   const clearChat = async () => {
     for (const message of sortedMessages) {

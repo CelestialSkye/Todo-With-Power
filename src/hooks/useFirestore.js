@@ -6,6 +6,8 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  query,
+  orderBy,
 } from "firebase/firestore";
 import { useAuth } from "./useAuth";
 
@@ -22,10 +24,13 @@ export const useFirestore = (collectionName) => {
     }
 
     const colRef = collection(db, `users/${userId}/${collectionName}`);
+    const q = collectionName === 'todos' 
+      ? query(colRef)
+      : query(colRef, orderBy("createdAt", "asc"));
     setIsLoading(true);
 
     const unsubscribe = onSnapshot(
-      colRef,
+      q,
       (snapshot) => {
         const formattedData = snapshot.docs.map((docSnap) => ({
           ...docSnap.data(),
