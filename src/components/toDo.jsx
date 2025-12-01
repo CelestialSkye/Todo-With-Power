@@ -73,6 +73,7 @@ function SortableTask({
          >
            {task.text}
          </p>
+         
       </div>
       <button
         onClick={(e) => {
