@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from "react";
+import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { useTodos } from "@/hooks/useTodo";
 import { Plus } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -39,8 +39,7 @@ function SortableTask({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    transition: transition || undefined,
   };
 
   return (
@@ -48,10 +47,10 @@ function SortableTask({
        ref={setNodeRef}
        style={style}
        {...attributes}
-       className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all focus:outline-none focus:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] dark:focus:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] duration-600 ease-out ${
+       className={`flex items-center gap-2 p-3 rounded-lg border-2 focus:outline-none focus:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] dark:focus:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] transition-[box-shadow,border-color,background-color] duration-300 ${
          isDragging
-           ? "border-dashed border-blue-500 bg-blue-50 dark:bg-blue-900 shadow-lg"
-           : "border-transparent hover:border-blue-500 bg-gray-50 dark:bg-gray-700 hover:shadow-md"
+           ? "border-dashed border-blue-500 bg-blue-50 dark:bg-blue-900 shadow-lg opacity-50"
+           : "border-transparent hover:border-blue-500 bg-gray-50 dark:bg-gray-700 hover:shadow-md opacity-100"
        }`}
        tabIndex={0}
      >
@@ -101,22 +100,36 @@ export function ToDo() {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const {
-    tasks,
+    tasks: remoteTasks,
     addTask,
     removeTask,
     reorderTasks,
     toggleTask,
     removeAllTasks,
   } = useTodos();
+  const [localTasks, setLocalTasks] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const taskRefs = useRef({});
   const isFirstRender = useRef(true);
   const isDeleting = useRef(false);
+  const isReordering = useRef(false);
   const prevTaskCount = useRef(0);
+
+  // use local tasks during drag, otherwise use remote tasks
+  const tasks = localTasks.length > 0 ? localTasks : remoteTasks;
+
+  // sync local tasks when remote tasks change significantly (add/delete)
+  useEffect(() => {
+    if (localTasks.length > 0 && remoteTasks.length !== localTasks.length) {
+      setLocalTasks([]);
+    }
+  }, [remoteTasks.length, localTasks.length]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      distance: 8,
+      activationConstraint: {
+        distance: 5,
+      },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -129,52 +142,68 @@ export function ToDo() {
     setInputValue("");
   }
 
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
+   const handleDragEnd = (event) => {
+     const { active, over } = event;
 
-    if (!over || active.id === over.id) return;
+     if (!over || active.id === over.id) {
+       setLocalTasks([]);
+       return;
+     }
 
-    const oldIndex = tasks.findIndex((t) => t.id === active.id);
-    const newIndex = tasks.findIndex((t) => t.id === over.id);
+     const oldIndex = tasks.findIndex((t) => t.id === active.id);
+     const newIndex = tasks.findIndex((t) => t.id === over.id);
 
-    if (oldIndex !== -1 && newIndex !== -1) {
-      const newTasks = arrayMove(tasks, oldIndex, newIndex);
-      reorderTasks(newTasks);
-    }
-  };
+     if (oldIndex !== -1 && newIndex !== -1) {
+       isReordering.current = true;
+       const newTasks = arrayMove(tasks, oldIndex, newIndex);
+       
+       // update local state immediately
+       setLocalTasks(newTasks);
+       
+       // update remote state
+       reorderTasks(newTasks).then(() => {
+         setLocalTasks([]);
+       });
+     }
+   };
 
-  useLayoutEffect(() => {
-    // skip animation when deleting
-    if (isDeleting.current) {
-      isDeleting.current = false;
-      prevTaskCount.current = tasks.length;
-      return;
-    }
+   useLayoutEffect(() => {
+     if (isDeleting.current) {
+       isDeleting.current = false;
+       prevTaskCount.current = tasks.length;
+       return;
+     }
 
-    // animate all tasks on first render
-    if (isFirstRender.current && tasks.length > 0) {
-      const allElements = Object.values(taskRefs.current).filter(Boolean);
-      if (allElements.length) {
-        gsap.from(allElements, {
-          opacity: 0,
-          y: 100,
-          duration: 1,
-          stagger: 0.1,
-        });
-      }
-      isFirstRender.current = false;
-      prevTaskCount.current = tasks.length;
-    }
-    // animate only new task when added
-    else if (tasks.length > prevTaskCount.current) {
-      const lastTask = tasks[tasks.length - 1];
-      const lastElement = taskRefs.current[lastTask?.id];
-      if (lastElement) {
-        gsap.from(lastElement, { opacity: 0, y: 100, duration: 1 });
-      }
-      prevTaskCount.current = tasks.length;
-    }
-  }, [tasks.length]);
+     if (isReordering.current) {
+       isReordering.current = false;
+       prevTaskCount.current = tasks.length;
+       return;
+     }
+
+     // animate all tasks on first render
+     if (isFirstRender.current && tasks.length > 0) {
+       const allElements = Object.values(taskRefs.current).filter(Boolean);
+       if (allElements.length) {
+         gsap.from(allElements, {
+           opacity: 0,
+           y: 100,
+           duration: 1,
+           stagger: 0.1,
+         });
+       }
+       isFirstRender.current = false;
+       prevTaskCount.current = tasks.length;
+     }
+     // animate only new task when added
+     else if (tasks.length > prevTaskCount.current) {
+       const lastTask = tasks[tasks.length - 1];
+       const lastElement = taskRefs.current[lastTask?.id];
+       if (lastElement) {
+         gsap.from(lastElement, { opacity: 0, y: 100, duration: 1 });
+       }
+       prevTaskCount.current = tasks.length;
+     }
+   }, [tasks.length]);
 
   const handleGSAPdelete = (taskId) => {
     const element = taskRefs.current[taskId];
