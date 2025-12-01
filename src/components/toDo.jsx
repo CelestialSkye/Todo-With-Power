@@ -22,6 +22,7 @@ import { useSortable } from "@dnd-kit/sortable";
 function SortableTask({
   task,
   onDelete,
+  onComplete,
   onDeleteWithAnimation,
   taskRefs,
   tasks,
@@ -56,28 +57,43 @@ function SortableTask({
         {...listeners}
         className="flex items-center gap-2 flex-1 cursor-grab active:cursor-grabbing"
       >
-        <div className="h-2 w-2 shrink-0 rounded-full bg-blue-600" />
-        <p className="flex-1 font-medium text-sm text-gray-900 dark:text-white">
+        <div className={`h-2 w-2 shrink-0 rounded-full transition-colors ${
+          task.completed ? "bg-green-500" : "bg-blue-600"
+        }`} />
+        <p className={`flex-1 font-medium text-sm transition-all ${
+          task.completed 
+            ? "line-through text-gray-400 dark:text-gray-500" 
+            : "text-gray-900 dark:text-white"
+        }`}>
           {task.text}
         </p>
       </div>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onDeleteWithAnimation(task.id);
-        }}
-        className="px-3 py-1 rounded text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
-      >
-        Delete
-      </button>
-    </div>
-  );
-}
+       <button
+         onClick={(e) => {
+           e.stopPropagation();
+           onDeleteWithAnimation(task.id);
+         }}
+         className="px-3 py-1 rounded text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+       >
+         Delete
+       </button>
+       <button
+         onClick={(e) => {
+           e.stopPropagation();
+           onComplete(task.id, task.completed);
+         }}
+         className="px-3 py-1 rounded text-sm text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 font-medium transition-colors"
+       >
+         Complete
+       </button>
+     </div>
+   );
+ }
 
 export function ToDo() {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
-  const { tasks, addTask, removeTask, reorderTasks } = useTodos();
+  const { tasks, addTask, removeTask, reorderTasks, toggleTask, removeAllTasks } = useTodos();
   const [inputValue, setInputValue] = useState("");
   const taskRefs = useRef({});
   const isFirstRender = useRef(true);
@@ -242,6 +258,16 @@ export function ToDo() {
         </button>
       </div>
 
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          removeAllTasks();
+        }}
+        className="px-3 py-1 rounded text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+      >
+        Delete All
+      </button>
+
       <div className="p-4">
         {tasks.length === 0 ? (
           <p className="text-center text-gray-500 dark:text-gray-400">
@@ -268,6 +294,7 @@ export function ToDo() {
                     <SortableTask
                       task={task}
                       onDelete={removeTask}
+                      onComplete={toggleTask}
                       onDeleteWithAnimation={handleGSAPdelete}
                       taskRefs={taskRefs}
                       tasks={tasks}

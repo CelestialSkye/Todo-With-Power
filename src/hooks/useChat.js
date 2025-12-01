@@ -1,5 +1,7 @@
 import { useFirestore } from "./useFirestore";
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useTodos } from "./useTodo";
+import { useRef } from "react";
 
 export const useChat = () => {
   const {
@@ -12,6 +14,9 @@ export const useChat = () => {
 
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
+  const { tasks: todoList } = useTodos();
+
+  const previousTasksRef = useRef([]);
 
   const sortedMessages = messages
     ? [...messages].sort((a, b) => {
@@ -19,19 +24,21 @@ export const useChat = () => {
       })
     : [];
 
-  const sendMessage = async (userMessage) => {
+  const sendMessage = useCallback(async (userMessage, isProactive = false) => {
     if (!userMessage.trim() || isApiLoading) return;
 
     const messageText = userMessage.trim();
     setIsApiLoading(true);
     setApiError(null);
-
-    const userPayload = {
-      text: messageText,
-      role: "user",
-      createdAt: new Date().toISOString(),
-    };
-    await addDocument(userPayload);
+    
+    if (!isProactive) {
+      const userPayload = {
+        text: messageText,
+        role: "user",
+        createdAt: new Date().toISOString(),
+      };
+      await addDocument(userPayload);
+    }
 
     try {
       const historyPayload = {
@@ -77,7 +84,49 @@ export const useChat = () => {
     } finally {
       setIsApiLoading(false);
     }
-  };
+  }, [isApiLoading, sortedMessages, addDocument]);
+
+  useEffect(() => {
+    if (
+      !todoList ||
+      (todoList.length === 0 && previousTasksRef.current.length === 0)
+    ) {
+      previousTasksRef.current = todoList || [];
+      return;
+    }
+
+    const prevTasks = previousTasksRef.current;
+    const currentTasks = todoList;
+    
+    //detect all tasks deleted
+    if (currentTasks.length === 0 && prevTasks.length > 0) {
+      const totalDeleted = prevTasks.length;
+      const proactiveMessage = `The entire list has been purged! All ${totalDeleted} tasks have been removed. The slate is clean.`;
+      sendMessage(proactiveMessage, true);
+    }
+    //detect single task deleted
+    else if (currentTasks.length < prevTasks.length) {
+      const deletedTask = prevTasks.find(
+        (t) => !currentTasks.some((ct) => ct.id === t.id)
+      );
+      if (deletedTask) {
+        const proactiveMessage = `A task was just eliminated from the list: "${deletedTask.text}". Acknowledge the deletion with a short, commanding comment.`;
+        sendMessage(proactiveMessage, true);
+      }
+    }
+    //detect task added
+    else if (currentTasks.length > prevTasks.length) {
+      const newTask = currentTasks.find(
+        (t) => !prevTasks.some((pt) => pt.id === t.id)
+      );
+      if (newTask) {
+        const proactiveMessage = `A new task has been added to the list: "${newTask.text}". Please comment on this addition.`;
+        sendMessage(proactiveMessage, true);
+      }
+    }
+
+    previousTasksRef.current = currentTasks;
+  }, [todoList, sendMessage]);
 
   const clearChat = async () => {
     for (const message of sortedMessages) {
