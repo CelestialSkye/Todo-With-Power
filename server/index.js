@@ -10,6 +10,12 @@ const { getChatCompletion } = require('./groqClient');
 app.use(cors()); 
 app.use(express.json());
 
+// Debug middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
+});
+
 const chatRoutes = require('./routes/chat');
 app.use('/api/chat', chatRoutes); 
 
