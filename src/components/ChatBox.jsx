@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { Send, Cpu, User, MessageSquare, X, Trash2 } from "lucide-react";
 import { useChat } from "../hooks/useChat";
 
+
 const ChatBox = () => {
   const { messages, isLoading, error, sendMessage, clearChat } = useChat();
   const [input, setInput] = useState("");

@@ -43,17 +43,19 @@ function SortableTask({
   };
 
   return (
-     <div
-       ref={setNodeRef}
-       style={style}
-       {...attributes}
-       className={`flex items-center gap-2 p-3 rounded-lg border-2 focus:outline-none focus:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] dark:focus:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] transition-[box-shadow,border-color,background-color] duration-300 ${
-         isDragging
-           ? "border-dashed border-blue-500 bg-blue-50 dark:bg-blue-900 shadow-lg opacity-50"
-           : "border-transparent hover:border-blue-500 bg-gray-50 dark:bg-gray-700 hover:shadow-md opacity-100"
-       }`}
-       tabIndex={0}
-     >
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className={`flex items-center gap-2 p-3 rounded-lg border focus:outline-none 
+    transition-all duration-300 ease-out 
+    ${
+      isDragging
+        ? "border-dashed border-blue-500 bg-blue-50 dark:bg-blue-900 shadow-lg opacity-50"
+        : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:shadow-md opacity-100"
+    }`}
+      tabIndex={0}
+    >
       <div
         {...listeners}
         className="flex items-center gap-2 flex-1 cursor-grab active:cursor-grabbing"
@@ -63,17 +65,18 @@ function SortableTask({
             task.completed ? "bg-green-500" : "bg-blue-600"
           }`}
         />
-         <p
-           className={`flex-1 font-medium text-sm transition-all focus:outline-none focus:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] dark:focus:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] duration-600 ease-out ${
-             task.completed
-               ? "line-through text-gray-400 dark:text-gray-500"
-               : "text-gray-900 dark:text-white"
-           }`}
-         >
-           {task.text}
-         </p>
-         
+        <p
+      
+      className={`min-w-0 text-wrap wrap-break-words font-medium text-sm transition-colors duration-200 ${
+        task.completed
+          ? "line-through text-gray-400 dark:text-gray-500"
+          : "text-gray-900 dark:text-white"
+      }`}
+    >
+      {task.text}
+    </p>
       </div>
+
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -142,68 +145,68 @@ export function ToDo() {
     setInputValue("");
   }
 
-   const handleDragEnd = (event) => {
-     const { active, over } = event;
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
 
-     if (!over || active.id === over.id) {
-       setLocalTasks([]);
-       return;
-     }
+    if (!over || active.id === over.id) {
+      setLocalTasks([]);
+      return;
+    }
 
-     const oldIndex = tasks.findIndex((t) => t.id === active.id);
-     const newIndex = tasks.findIndex((t) => t.id === over.id);
+    const oldIndex = tasks.findIndex((t) => t.id === active.id);
+    const newIndex = tasks.findIndex((t) => t.id === over.id);
 
-     if (oldIndex !== -1 && newIndex !== -1) {
-       isReordering.current = true;
-       const newTasks = arrayMove(tasks, oldIndex, newIndex);
-       
-       // update local state immediately
-       setLocalTasks(newTasks);
-       
-       // update remote state
-       reorderTasks(newTasks).then(() => {
-         setLocalTasks([]);
-       });
-     }
-   };
+    if (oldIndex !== -1 && newIndex !== -1) {
+      isReordering.current = true;
+      const newTasks = arrayMove(tasks, oldIndex, newIndex);
 
-   useLayoutEffect(() => {
-     if (isDeleting.current) {
-       isDeleting.current = false;
-       prevTaskCount.current = tasks.length;
-       return;
-     }
+      // update local state immediately
+      setLocalTasks(newTasks);
 
-     if (isReordering.current) {
-       isReordering.current = false;
-       prevTaskCount.current = tasks.length;
-       return;
-     }
+      // update remote state
+      reorderTasks(newTasks).then(() => {
+        setLocalTasks([]);
+      });
+    }
+  };
 
-     // animate all tasks on first render
-     if (isFirstRender.current && tasks.length > 0) {
-       const allElements = Object.values(taskRefs.current).filter(Boolean);
-       if (allElements.length) {
-         gsap.from(allElements, {
-           opacity: 0,
-           y: 100,
-           duration: 1,
-           stagger: 0.1,
-         });
-       }
-       isFirstRender.current = false;
-       prevTaskCount.current = tasks.length;
-     }
-     // animate only new task when added
-     else if (tasks.length > prevTaskCount.current) {
-       const lastTask = tasks[tasks.length - 1];
-       const lastElement = taskRefs.current[lastTask?.id];
-       if (lastElement) {
-         gsap.from(lastElement, { opacity: 0, y: 100, duration: 1 });
-       }
-       prevTaskCount.current = tasks.length;
-     }
-   }, [tasks.length]);
+  useLayoutEffect(() => {
+    if (isDeleting.current) {
+      isDeleting.current = false;
+      prevTaskCount.current = tasks.length;
+      return;
+    }
+
+    if (isReordering.current) {
+      isReordering.current = false;
+      prevTaskCount.current = tasks.length;
+      return;
+    }
+
+    // animate all tasks on first render
+    if (isFirstRender.current && tasks.length > 0) {
+      const allElements = Object.values(taskRefs.current).filter(Boolean);
+      if (allElements.length) {
+        gsap.from(allElements, {
+          opacity: 0,
+          y: 100,
+          duration: 1,
+          stagger: 0.1,
+        });
+      }
+      isFirstRender.current = false;
+      prevTaskCount.current = tasks.length;
+    }
+    // animate only new task when added
+    else if (tasks.length > prevTaskCount.current) {
+      const lastTask = tasks[tasks.length - 1];
+      const lastElement = taskRefs.current[lastTask?.id];
+      if (lastElement) {
+        gsap.from(lastElement, { opacity: 0, y: 100, duration: 1 });
+      }
+      prevTaskCount.current = tasks.length;
+    }
+  }, [tasks.length]);
 
   const handleGSAPdelete = (taskId) => {
     const element = taskRefs.current[taskId];
@@ -285,20 +288,29 @@ export function ToDo() {
       </div>
 
       <div className="flex gap-2 p-4">
-         <input
-           type="text"
-           value={inputValue}
-           onChange={(e) => setInputValue(e.target.value)}
-           onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
-           placeholder="Enter something..."
-           className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] dark:focus:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] transition-all duration-600 ease-out"
-         />
-         <button
-           onClick={handleAddTask}
-           className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-black dark:text-white font-medium transition-colors bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-         >
-           <Plus size={16} />
-         </button>
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
+          placeholder="Enter something..."
+          className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] dark:focus:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] transition-all duration-600 ease-out"
+        />
+        <button
+          onClick={handleAddTask}
+          className="px-6 py-2 rounded-lg font-medium transition-all duration-600 ease-out 
+           border border-gray-300 dark:border-gray-600 
+           
+           bg-white dark:bg-gray-800 
+           text-black dark:text-white 
+           
+           hover:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] 
+           dark:hover:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)]
+           
+           hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <Plus size={16} />
+        </button>
       </div>
 
       <button
