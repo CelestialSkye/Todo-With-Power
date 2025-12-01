@@ -60,7 +60,7 @@ const ChatBox = () => {
   };
 
   return (
-    <div className="relative w-full h-screen bg-gray-50/50">
+    <div className="relative w-full h-auto bg-transparent">
       <div
         className={`
                     fixed bottom-24 right-6 z-50 
@@ -70,7 +70,7 @@ const ChatBox = () => {
                         : "opacity-0 translate-y-4 pointer-events-none"
                     }
                     transition-all duration-300 ease-in-out
-                    w-80 h-[28rem] sm:w-96 sm:h-[32rem]
+                    w-80 h-112 sm:w-96 sm:h-128
                     max-w-[90vw]
                 `}
       >

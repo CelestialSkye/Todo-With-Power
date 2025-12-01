@@ -1,5 +1,6 @@
 import { useState, useRef, useLayoutEffect } from "react";
 import { useTodos } from "@/hooks/useTodo";
+import { Plus } from "lucide-react";
 import { useTheme } from "next-themes";
 import {
   DndContext,
@@ -43,57 +44,69 @@ function SortableTask({
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${
-        isDragging
-          ? "border-dashed border-blue-500 bg-blue-50 dark:bg-blue-900 shadow-lg"
-          : "border-transparent hover:border-blue-500 bg-gray-50 dark:bg-gray-700 hover:shadow-md"
-      }`}
-    >
+     <div
+       ref={setNodeRef}
+       style={style}
+       {...attributes}
+       className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all focus:outline-none focus:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] dark:focus:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] duration-600 ease-out ${
+         isDragging
+           ? "border-dashed border-blue-500 bg-blue-50 dark:bg-blue-900 shadow-lg"
+           : "border-transparent hover:border-blue-500 bg-gray-50 dark:bg-gray-700 hover:shadow-md"
+       }`}
+       tabIndex={0}
+     >
       <div
         {...listeners}
         className="flex items-center gap-2 flex-1 cursor-grab active:cursor-grabbing"
       >
-        <div className={`h-2 w-2 shrink-0 rounded-full transition-colors ${
-          task.completed ? "bg-green-500" : "bg-blue-600"
-        }`} />
-        <p className={`flex-1 font-medium text-sm transition-all ${
-          task.completed 
-            ? "line-through text-gray-400 dark:text-gray-500" 
-            : "text-gray-900 dark:text-white"
-        }`}>
-          {task.text}
-        </p>
+        <div
+          className={`h-2 w-2 shrink-0 rounded-full transition-colors ${
+            task.completed ? "bg-green-500" : "bg-blue-600"
+          }`}
+        />
+         <p
+           className={`flex-1 font-medium text-sm transition-all focus:outline-none focus:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] dark:focus:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] duration-600 ease-out ${
+             task.completed
+               ? "line-through text-gray-400 dark:text-gray-500"
+               : "text-gray-900 dark:text-white"
+           }`}
+         >
+           {task.text}
+         </p>
       </div>
-       <button
-         onClick={(e) => {
-           e.stopPropagation();
-           onDeleteWithAnimation(task.id);
-         }}
-         className="px-3 py-1 rounded text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
-       >
-         Delete
-       </button>
-       <button
-         onClick={(e) => {
-           e.stopPropagation();
-           onComplete(task.id, task.completed);
-         }}
-         className="px-3 py-1 rounded text-sm text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 font-medium transition-colors"
-       >
-         Complete
-       </button>
-     </div>
-   );
- }
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onDeleteWithAnimation(task.id);
+        }}
+        className="px-3 py-1 rounded text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+      >
+        Delete
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onComplete(task.id, task.completed);
+        }}
+        className="px-3 py-1 rounded text-sm text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 font-medium transition-colors"
+      >
+        Complete
+      </button>
+    </div>
+  );
+}
 
 export function ToDo() {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
-  const { tasks, addTask, removeTask, reorderTasks, toggleTask, removeAllTasks } = useTodos();
+  const {
+    tasks,
+    addTask,
+    removeTask,
+    reorderTasks,
+    toggleTask,
+    removeAllTasks,
+  } = useTodos();
   const [inputValue, setInputValue] = useState("");
   const taskRefs = useRef({});
   const isFirstRender = useRef(true);
@@ -226,7 +239,7 @@ export function ToDo() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto mt-10 space-y-6">
+    <div className="w-full max-w-md mx-auto mt-10 space-y-6 mb-10">
       <div className="p-4 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           Hello!
@@ -242,20 +255,20 @@ export function ToDo() {
       </div>
 
       <div className="flex gap-2 p-4">
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
-          placeholder="Enter something..."
-          className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          onClick={handleAddTask}
-          className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
-        >
-          Add
-        </button>
+         <input
+           type="text"
+           value={inputValue}
+           onChange={(e) => setInputValue(e.target.value)}
+           onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
+           placeholder="Enter something..."
+           className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] dark:focus:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] transition-all duration-600 ease-out"
+         />
+         <button
+           onClick={handleAddTask}
+           className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-black dark:text-white font-medium transition-colors bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+         >
+           <Plus size={16} />
+         </button>
       </div>
 
       <button
