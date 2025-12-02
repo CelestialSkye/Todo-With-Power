@@ -1,5 +1,6 @@
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { useTodos } from "@/hooks/useTodo";
+import { useAuth } from "@/hooks/useAuth";
 import { Plus } from "lucide-react";
 import { useTheme } from "next-themes";
 import { ThemeTransition } from "./ThemeTransition";
@@ -7,6 +8,7 @@ import { MdLightMode } from "react-icons/md";
 import { CiLight } from "react-icons/ci";
 import { MdDelete } from "react-icons/md";
 import { IoIosCheckmarkCircle } from "react-icons/io";
+import { MdDeleteForever } from "react-icons/md";
 
 import {
   DndContext,
@@ -53,7 +55,7 @@ function SortableTask({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className={`flex items-start gap-2 p-3 rounded-lg border focus:outline-none 
+      className={`flex items-center gap-2 p-3 rounded-lg border focus:outline-none 
     transition-all duration-600 ease-out 
     ${
       isDragging
@@ -67,7 +69,7 @@ function SortableTask({
         className="flex items-center gap-2 flex-1 cursor-grab active:cursor-grabbing min-w-0 transition-all duration-600 ease-out "
       >
         <div
-          className={`h-2 w-2 shrink-0 rounded-full transition-all duration-600 ease-out ${
+          className={`h-3 w-3 shrink-0 rounded-full transition-all duration-600 ease-out ${
             task.completed ? "bg-green-500" : "bg-blue-600"
           }`}
         />
@@ -87,7 +89,7 @@ function SortableTask({
           e.stopPropagation();
           onDeleteWithAnimation(task.id);
         }}
-        className="px-3 py-1 rounded-full text-sm text-red-600 dark:text-red-400 hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] dark:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] font-medium transition-all duration-600 ease-out"
+        className="px-3 py-1 rounded-full text-sm text-red-600 dark:text-red-400 hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] dark:hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] font-medium transition-all duration-600 ease-out"
       >
         <MdDelete size={20} />{" "}
       </button>
@@ -97,9 +99,7 @@ function SortableTask({
         }}
         className="px-3 py-1 rounded-full text-sm text-green-600 dark:text-green-400 hover:shadow-[0_0_8px_2px_rgba(34,197,94,0.6)]  dark:hover:shadow-[0_0_8px_2px_rgba(34,197,94,0.6)] font-medium transition-all duration-600 ease-out"
       >
-    
-        <IoIosCheckmarkCircle size={20}/>
-
+        <IoIosCheckmarkCircle size={20} />
       </button>
     </div>
   );
@@ -107,9 +107,11 @@ function SortableTask({
 
 export function ToDo() {
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const { isAuthReady } = useAuth();
 
   const {
     tasks: remoteTasks,
+    isLoading,
     addTask,
     removeTask,
     reorderTasks,
@@ -287,7 +289,7 @@ export function ToDo() {
         <div className="w-full max-w-md mx-auto mt-10 space-y-6 mb-10">
           <div className="p-4 flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Hello!
+              {/* Hello! */}
             </h1>
             <button
               ref={buttonRef}
@@ -329,13 +331,21 @@ export function ToDo() {
               e.stopPropagation();
               removeAllTasks();
             }}
-            className="px-3 py-1 rounded text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+            className="px-3 py-2 ml-4 flex rounded text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
           >
-            Delete All
+            <MdDeleteForever className="w-5 h-5" />
+            <span>Delete all</span>{" "}
           </button>
 
           <div className="p-4">
-            {tasks.length === 0 ? (
+            {(isLoading || !isAuthReady) && tasks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 space-y-3">
+                <div className="animate-spin">
+                  <div className="w-8 h-8 border-4 border-blue-200 dark:border-blue-900 border-t-blue-600 dark:border-t-blue-400 rounded-full"></div>
+                </div>
+                <p className="text-center text-gray-500 dark:text-gray-400">Loading tasks...</p>
+              </div>
+            ) : tasks.length === 0 ? (
               <p className="text-center text-gray-500 dark:text-gray-400">
                 No tasks yet
               </p>
