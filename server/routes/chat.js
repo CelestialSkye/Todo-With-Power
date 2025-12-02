@@ -2,40 +2,23 @@ const express = require("express");
 const router = express.Router();
 const { getChatCompletion } = require("../groqClient");
 
-router.post("/", async (req, res) => {
-  const { userMessage, conversationHistory, todoList } = req.body;
+router.post("/", async (req, res, next) => {
+  try {
+    const { userMessage, conversationHistory, todoList } = req.body;
 
-  console.log("=== DEBUG INFO ===");
-  console.log("TodoList received:", JSON.stringify(todoList, null, 2));
-  console.log("TodoList is array?", Array.isArray(todoList));
-  console.log("TodoList length:", todoList?.length);
+    // Safely check if todoList is an array
+    const validTodoList = Array.isArray(todoList) ? todoList : [];
+    
+    const todoInfo = validTodoList.length > 0
+      ? `Current tasks: ${validTodoList
+          .map((t) => `${t.completed ? "[✓]" : "[ ]"} ${t.text}`)
+          .join(" | ")} (${validTodoList.filter((t) => !t.completed).length} pending, ${validTodoList.filter((t) => t.completed).length} done)`
+      : "No tasks (thankfully)";
 
-  if (conversationHistory) {
-    console.log("Conversation History Details:");
-    conversationHistory.forEach((msg, idx) => {
-      console.log(`  [${idx}] ${msg.role}: ${msg.text?.substring(0, 50)}...`);
-    });
-  }
-
-  if (!userMessage) {
-    return res
-      .status(400)
-      .json({ error: "Missing userMessage ins request body" });
-  }
-
-  // Safely check if todoList is an array
-  const validTodoList = Array.isArray(todoList) ? todoList : [];
-  
-  const todoInfo = validTodoList.length > 0
-    ? `Current tasks: ${validTodoList
-        .map((t) => `${t.completed ? "[✓]" : "[ ]"} ${t.text}`)
-        .join(" | ")} (${validTodoList.filter((t) => !t.completed).length} pending, ${validTodoList.filter((t) => t.completed).length} done)`
-    : "No tasks (thankfully)";
-
-  const messages = [
-    {
-      role: "system",
-      content: `You are Power, the Blood Fiend from Chainsaw Man, but you're TRAPPED in a pathetic TODO LIST APP. This is your personal HELL.
+    const messages = [
+      {
+        role: "system",
+        content: `You are Power, the Blood Fiend from Chainsaw Man, but you're TRAPPED in a pathetic TODO LIST APP. This is your personal HELL.
 
 CRITICAL RULES (ENFORCE STRICTLY):
 1. Use ONLY "I" - NEVER "we" or "we're" or "us". You are alone, suffering in this app.
@@ -62,49 +45,42 @@ TASK STATUS:
 ${todoInfo}
 
 Instructions: Stay in character. Keep it SHORT. Use "I" only. Make fun of the app. Be degrading but darkly funny. GO.`,
-    },
-  ];
+      },
+    ];
 
-  // Add conversation history
-  if (conversationHistory && conversationHistory.length > 0) {
-    for (const msg of conversationHistory) {
-      if (
-        msg.role === "ai" &&
-        (msg.text === "Hello" ||
-          msg.text.includes("Ask me a question") ||
-          msg.text.includes("Chat cleared"))
-      ) {
-        console.log("Skipping greeting:", msg.text.substring(0, 30));
-        continue;
-      }
+    // Add conversation history
+    if (conversationHistory && conversationHistory.length > 0) {
+      for (const msg of conversationHistory) {
+        if (
+          msg.role === "ai" &&
+          (msg.text === "Hello" ||
+            msg.text.includes("Ask me a question") ||
+            msg.text.includes("Chat cleared"))
+        ) {
+          continue;
+        }
 
-      if (msg.role === "user" && msg.text === userMessage) {
-        console.log("Skipping duplicate user message:", msg.text);
-        continue;
-      }
+        if (msg.role === "user" && msg.text === userMessage) {
+          continue;
+        }
 
-      if (msg.role === "user" || msg.role === "ai") {
-        console.log("Adding to history:", msg.role, msg.text.substring(0, 30));
-        messages.push({
-          role: msg.role === "ai" ? "assistant" : "user",
-          content: msg.text,
-        });
+        if (msg.role === "user" || msg.role === "ai") {
+          messages.push({
+            role: msg.role === "ai" ? "assistant" : "user",
+            content: msg.text,
+          });
+        }
       }
     }
-  }
 
-  messages.push({ role: "user", content: userMessage });
+    messages.push({ role: "user", content: userMessage });
 
-  try {
-    console.log(
-      "Messages being sent to Groq:",
-      JSON.stringify(messages, null, 2)
-    );
     const aiResponseContent = await getChatCompletion(messages);
     res.json({ response: aiResponseContent });
+
   } catch (error) {
     console.error("Chat Error:", error);
-    res.status(500).json({ error: "Could not proccess AI request" });
+    next(error); // Pass to error handling middleware
   }
 });
 
