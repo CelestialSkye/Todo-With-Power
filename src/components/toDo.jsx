@@ -288,12 +288,12 @@ export function ToDo() {
       {({ handleThemeChange, buttonRef }) => (
         <div className="w-full max-w-md mx-auto mt-10 space-y-6 mb-10">
           <div className="p-4 flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <div className="overflow-hidden rounded-xl inline-block">
               <img
                 src={powerWideImage}
-                className="overflow-hidden ml-[-25%] h-auto w-auto rounded-lg border-gray-700 scale-x-[-1]"
-              />{" "}
-            </h1>
+                className="ml-[-25%] h-18 w-auto scale-x-[-1] object-cover"
+              />
+            </div>
             <button
               ref={buttonRef}
               onClick={handleThemeChange}
