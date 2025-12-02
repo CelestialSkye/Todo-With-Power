@@ -9,12 +9,11 @@ const port = process.env.PORT || 8000;
 const nodeEnv = process.env.NODE_ENV || 'development';
 const { getChatCompletion } = require('./groqClient');
 
-// ============ SECURITY MIDDLEWARE ============
 
-// Helmet - Set security HTTP headers
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: false // Allow CORS to handle resource policy
+}));
 
-// CORS - Restrict to specific origins in production
 const corsOptions = {
   origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
@@ -24,26 +23,22 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Body parser with size limits
 app.use(express.json({ limit: '1mb' }));
 
-// Rate limiting - Prevent abuse
+// Rate limiting 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: nodeEnv === 'production' ? 30 : 100, // 30 requests per window in production, 100 in dev
+  windowMs: 15 * 60 * 1000, 
+  max: nodeEnv === 'production' ? 50 : 100, 
   message: 'Too many requests, please try again later',
-  standardHeaders: true, // Return info in RateLimit-* headers
-  legacyHeaders: false, // Disable X-RateLimit-* headers
+  standardHeaders: true, 
+  legacyHeaders: false, 
   skip: (req) => {
-    // Skip rate limiting for test endpoint in development
     return nodeEnv === 'development' && req.path === '/test-ai-connection';
   }
 });
 
-// Apply rate limiting to all routes
 app.use(limiter);
 
-// ============ LOGGING MIDDLEWARE (Development only) ============
 if (nodeEnv === 'development') {
   app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
@@ -51,7 +46,6 @@ if (nodeEnv === 'development') {
   });
 }
 
-// ============ INPUT VALIDATION MIDDLEWARE ============
 const validateChatInput = (req, res, next) => {
   const { userMessage, conversationHistory, todoList } = req.body;
 
@@ -77,13 +71,10 @@ const validateChatInput = (req, res, next) => {
   next();
 };
 
-// ============ ROUTES ============
 const chatRoutes = require('./routes/chat');
 app.use('/api/chat', validateChatInput, chatRoutes);
 
-// Test endpoint (development only, rate limit skipped)
 app.get('/test-ai-connection', async (req, res) => {
-  // Only allow in development
   if (nodeEnv === 'production') {
     return res.status(403).json({ error: 'This endpoint is disabled in production' });
   }
@@ -99,12 +90,10 @@ app.get('/test-ai-connection', async (req, res) => {
     res.json({ 
       status: "Success!", 
       test_response: aiResponse
-      // DO NOT expose api_key_loaded in production
     });
 
   } catch (error) {
     console.error("Test Error:", error.message);
-    // Don't leak error details in production
     const errorMessage = nodeEnv === 'development' 
       ? error.message 
       : 'Failed to connect to AI service';
@@ -115,16 +104,13 @@ app.get('/test-ai-connection', async (req, res) => {
   }
 });
 
-// Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', environment: nodeEnv });
 });
 
-// ============ ERROR HANDLING MIDDLEWARE ============
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   
-  // Don't expose error details in production
   const message = nodeEnv === 'production' 
     ? 'Internal server error' 
     : err.message;
@@ -140,7 +126,6 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// ============ START SERVER ============
 app.listen(port, () => {
   console.log(`Server listening on port ${port} (${nodeEnv})`);
   if (nodeEnv === 'production') {
