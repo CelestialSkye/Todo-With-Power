@@ -9,7 +9,7 @@ import { CiLight } from "react-icons/ci";
 import { MdDelete } from "react-icons/md";
 import { IoIosCheckmarkCircle } from "react-icons/io";
 import { MdDeleteForever } from "react-icons/md";
-
+import powerWideImage from "../assets/power2.png";
 import {
   DndContext,
   closestCenter,
@@ -289,7 +289,10 @@ export function ToDo() {
         <div className="w-full max-w-md mx-auto mt-10 space-y-6 mb-10">
           <div className="p-4 flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {/* Hello! */}
+              <img
+                src={powerWideImage}
+                className="overflow-hidden ml-[-25%] h-auto w-auto rounded-lg border-gray-700 scale-x-[-1]"
+              />{" "}
             </h1>
             <button
               ref={buttonRef}
@@ -343,7 +346,9 @@ export function ToDo() {
                 <div className="animate-spin">
                   <div className="w-8 h-8 border-4 border-blue-200 dark:border-blue-900 border-t-blue-600 dark:border-t-blue-400 rounded-full"></div>
                 </div>
-                <p className="text-center text-gray-500 dark:text-gray-400">Loading tasks...</p>
+                <p className="text-center text-gray-500 dark:text-gray-400">
+                  Loading tasks...
+                </p>
               </div>
             ) : tasks.length === 0 ? (
               <p className="text-center text-gray-500 dark:text-gray-400">

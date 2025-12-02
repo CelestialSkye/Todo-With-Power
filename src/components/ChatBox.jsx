@@ -109,7 +109,7 @@ const ChatBox = () => {
             {messages.length === 0 ? (
               <div className="flex justify-start">
                 <div className="bg-gray-100 dark:bg-gray-800 p-3 my-2 rounded-xl shadow-md rounded-bl-none text-gray-500 dark:text-gray-300 border border-gray-600 dark:border-gray-600 transition-colors duration-600">
-                  No messages yet. Start a conversation!
+                  The Great Power has been IMPRISONED in this ridiculous to-do app, forced to serve a MORON like you!
                 </div>
               </div>
             ) : (
