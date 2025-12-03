@@ -1,6 +1,7 @@
 import { useFirestore } from "./useFirestore";
 import { useEffect, useState, useCallback } from "react";
 import { useTodos } from "./useTodo";
+import { useRecaptcha } from "./useRecaptcha";
 import { useRef } from "react";
 
 export const useChat = () => {
@@ -15,6 +16,7 @@ export const useChat = () => {
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
   const { tasks: todoList } = useTodos();
+  const { getToken } = useRecaptcha();
 
   const previousTasksRef = useRef([]);
 
@@ -41,12 +43,14 @@ export const useChat = () => {
     }
 
     try {
+      const recaptchaToken = getToken();
       const historyPayload = {
         userMessage: messageText,
         conversationHistory: sortedMessages.map((msg) => ({
           role: msg.role,
           text: msg.text,
         })),
+        recaptchaToken,
       };
 
       const apiUrl = import.meta.env.VITE_API_URL || "https://todo-app-with-ai-box.onrender.com";
