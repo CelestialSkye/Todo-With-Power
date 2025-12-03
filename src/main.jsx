@@ -11,11 +11,6 @@ console.error = (...args) => {
   originalError.apply(console, args);
 };
 
-const savedTheme = localStorage.getItem("theme");
-if (savedTheme === "dark") {
-  document.documentElement.classList.add("dark");
-}
-
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <App />
