@@ -13,6 +13,16 @@ const verifyRecaptcha = async (token) => {
     });
 
     const data = await response.json();
+    console.log("reCAPTCHA verification response:", JSON.stringify(data, null, 2));
+    
+    if (!data.success) {
+      console.error("reCAPTCHA verification failed:", data["error-codes"]);
+    }
+    
+    if (data.success && data.score !== undefined) {
+      console.log("reCAPTCHA score:", data.score);
+    }
+    
     return data.success && data.score > 0.5;
   } catch (error) {
     console.error("reCAPTCHA verification error:", error);

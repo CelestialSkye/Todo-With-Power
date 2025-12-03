@@ -85,3 +85,8 @@ html.dark .dark\:hover\:bg-red-900\/20:hover {
     mask-size: 200vmax;
   }
 }
+
+/* Hide reCAPTCHA badge */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}

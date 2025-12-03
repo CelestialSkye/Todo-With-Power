@@ -11,8 +11,7 @@ export const useRecaptcha = () => {
       }
 
       const script = document.createElement('script');
-      // Add waf=session to disable Private Access Tokens feature
-      script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}&waf=session`;
+      script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
       script.async = true;
       script.defer = true;
       
@@ -25,7 +24,8 @@ export const useRecaptcha = () => {
         if (window.grecaptcha) {
           window.grecaptcha.ready(() => {
             console.log('reCAPTCHA ready');
-            executeRecaptcha();
+            // Don't execute on load - only execute when needed (on chat send)
+            // This prevents unnecessary PAT requests
           });
         }
       };
