@@ -49,7 +49,7 @@ export const useChat = () => {
         })),
       };
 
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      const apiUrl = import.meta.env.VITE_API_URL || "https://todo-app-with-ai-box.onrender.com";
       const response = await fetch(`${apiUrl}/api/chat`, {
         method: "POST",
         headers: {
