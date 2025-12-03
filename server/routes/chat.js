@@ -5,8 +5,6 @@ const { getChatCompletion } = require("../groqClient");
 const verifyRecaptcha = async (token) => {
   try {
     const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-    console.log("Using secret key (first 10 chars):", secretKey ? secretKey.substring(0, 10) : "MISSING");
-    console.log("Token received (first 20 chars):", token ? token.substring(0, 20) : "MISSING");
     
     const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
       method: "POST",
@@ -17,16 +15,6 @@ const verifyRecaptcha = async (token) => {
     });
 
     const data = await response.json();
-    console.log("reCAPTCHA verification response:", JSON.stringify(data, null, 2));
-    
-    if (!data.success) {
-      console.error("reCAPTCHA verification failed:", data["error-codes"]);
-    }
-    
-    if (data.success && data.score !== undefined) {
-      console.log("reCAPTCHA score:", data.score);
-    }
-    
     return data.success && data.score > 0.5;
   } catch (error) {
     console.error("reCAPTCHA verification error:", error);

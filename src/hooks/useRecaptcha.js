@@ -14,37 +14,16 @@ export const useRecaptcha = () => {
       script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
       script.async = true;
       script.defer = true;
-      
-      script.onerror = () => {
-        console.error('Failed to load reCAPTCHA script');
-      };
 
       script.onload = () => {
-        console.log('reCAPTCHA script loaded successfully');
         if (window.grecaptcha) {
           window.grecaptcha.ready(() => {
-            console.log('reCAPTCHA ready');
-            // Don't execute on load - only execute when needed (on chat send)
-            // This prevents unnecessary PAT requests
+            // reCAPTCHA ready
           });
         }
       };
 
       document.head.appendChild(script);
-    };
-
-    const executeRecaptcha = () => {
-      if (window.grecaptcha && window.grecaptcha.execute) {
-        window.grecaptcha
-          .execute(RECAPTCHA_SITE_KEY, { action: 'submit' })
-          .then((token) => {
-            console.log('reCAPTCHA token generated successfully');
-            sessionStorage.setItem('recaptchaToken', token);
-          })
-          .catch((error) => {
-            console.error('reCAPTCHA execution error:', error);
-          });
-      }
     };
 
     loadRecaptcha();
@@ -57,7 +36,6 @@ export const useRecaptcha = () => {
   const executeRecaptchaAction = (action = 'submit') => {
     return new Promise((resolve, reject) => {
       if (!window.grecaptcha) {
-        console.warn('reCAPTCHA not loaded yet');
         reject(new Error('reCAPTCHA not loaded'));
         return;
       }
@@ -66,12 +44,10 @@ export const useRecaptcha = () => {
         window.grecaptcha
           .execute(RECAPTCHA_SITE_KEY, { action })
           .then((token) => {
-            console.log('reCAPTCHA token generated for action:', action);
             sessionStorage.setItem('recaptchaToken', token);
             resolve(token);
           })
           .catch((error) => {
-            console.error('reCAPTCHA execution error:', error);
             reject(error);
           });
       });
