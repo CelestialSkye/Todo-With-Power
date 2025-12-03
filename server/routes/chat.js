@@ -4,12 +4,16 @@ const { getChatCompletion } = require("../groqClient");
 
 const verifyRecaptcha = async (token) => {
   try {
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    console.log("Using secret key (first 10 chars):", secretKey ? secretKey.substring(0, 10) : "MISSING");
+    console.log("Token received (first 20 chars):", token ? token.substring(0, 20) : "MISSING");
+    
     const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`,
+      body: `secret=${secretKey}&response=${token}`,
     });
 
     const data = await response.json();
