@@ -11,7 +11,8 @@ export const useRecaptcha = () => {
       }
 
       const script = document.createElement('script');
-      script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+      // Add waf=session to disable Private Access Tokens feature
+      script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}&waf=session`;
       script.async = true;
       script.defer = true;
       
