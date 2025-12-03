@@ -1,19 +1,6 @@
-@import "tailwindcss";
-
-@plugin "tailwindcss-animate";
-
-@layer base {
-  * {
-    @apply outline-blue-500/50;
-  }
-  
-  /* Smooth transitions for theme switching */
-  [class*="dark:bg-"],
-  [class*="dark:text-"],
-  [class*="dark:border-"] {
-    @apply transition-colors duration-600 ease-out;
-  }
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* View Transition API styles for smooth theme switching with circular mask */
 ::view-transition-new(root) {
@@ -43,4 +30,11 @@
 /* Hide reCAPTCHA badge */
 .grecaptcha-badge {
   visibility: hidden !important;
+}
+
+/* Improve drag and drop on touch devices */
+[data-dnd-sortable] {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }

@@ -10,10 +10,11 @@
       // Apply theme class before React renders to prevent flash
       try {
         const theme = localStorage.getItem('theme');
+        // Let next-themes handle the dark class
         if (theme === 'dark') {
-          document.documentElement.classList.add('dark');
+          document.documentElement.setAttribute('class', 'dark');
         } else {
-          document.documentElement.classList.remove('dark');
+          document.documentElement.setAttribute('class', '');
         }
       } catch (e) {}
     </script>

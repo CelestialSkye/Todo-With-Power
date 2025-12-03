@@ -7,7 +7,12 @@ function App() {
   useRecaptcha();
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" storageKey="theme" forcedTheme={undefined} disableTransitionOnChange={false}>
+    <ThemeProvider 
+      attribute="class" 
+      defaultTheme="light" 
+      storageKey="theme" 
+      enableSystem={false}
+    >
       <ToDo />
       <ChatBox />
     </ThemeProvider>

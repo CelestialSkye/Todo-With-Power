@@ -15,6 +15,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -35,6 +36,7 @@ function SortableTask({
   onDeleteWithAnimation,
   taskRefs,
   tasks,
+  isDeleting,
 }) {
   const {
     attributes,
@@ -87,9 +89,12 @@ function SortableTask({
       <button
         onClick={(e) => {
           e.stopPropagation();
-          onDeleteWithAnimation(task.id);
+          if (!isDeleting) {
+            onDeleteWithAnimation(task.id);
+          }
         }}
-        className="px-3 py-1 rounded-full text-sm text-red-600 dark:text-red-400 hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] dark:hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] font-medium transition-all duration-600 ease-out"
+        disabled={isDeleting}
+        className="px-3 py-1 rounded-full text-sm text-red-600 dark:text-red-400 hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] dark:hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] font-medium transition-all duration-600 ease-out disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <MdDelete size={20} />{" "}
       </button>
@@ -120,6 +125,7 @@ export function ToDo() {
   } = useTodos();
   const [localTasks, setLocalTasks] = useState([]);
   const [inputValue, setInputValue] = useState("");
+  const [deletingTaskId, setDeletingTaskId] = useState(null);
   const taskRefs = useRef({});
   const isFirstRender = useRef(true);
   const isDeleting = useRef(false);
@@ -139,7 +145,13 @@ export function ToDo() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -178,10 +190,23 @@ export function ToDo() {
     }
   };
 
+  // Reset isFirstRender when tasks load from Firestore after mount
+  useEffect(() => {
+    if (!isLoading && tasks.length > 0 && prevTaskCount.current === 0) {
+      isFirstRender.current = true;
+    }
+  }, [isLoading, tasks.length]);
+
   useLayoutEffect(() => {
     if (isDeleting.current) {
       isDeleting.current = false;
       prevTaskCount.current = tasks.length;
+      
+      // Clear all transforms after delete completes and React re-renders
+      const allElements = Object.values(taskRefs.current).filter(Boolean);
+      allElements.forEach((el) => {
+        if (el) gsap.set(el, { clearProps: "all" });
+      });
       return;
     }
 
@@ -214,68 +239,56 @@ export function ToDo() {
       }
       prevTaskCount.current = tasks.length;
     }
-  }, [tasks.length]);
+  }, [tasks]);
 
   const handleGSAPdelete = (taskId) => {
+    // Prevent multiple deletes at once
+    if (deletingTaskId) return;
+    
     const element = taskRefs.current[taskId];
     const taskIndex = tasks.findIndex((t) => t.id === taskId);
 
-    if (!element) return; // prevent more than 1 delete
+    if (!element) return;
 
     if (element.dataset.deleting === "true") return;
-    element.dataset.deleting = "true"; // get height of elements that are getting deleted
+    element.dataset.deleting = "true";
+    
+    setDeletingTaskId(taskId);
 
     const elementHeight = element.offsetHeight;
     const gap = 8;
 
-    // a flag to ensure state update happens once all animations are done
-    let isCleanupComplete = false;
-
-    // function to run the cleanup and state update
-    const performCleanupAndStateUpdate = () => {
-      if (isCleanupComplete) return;
-      isCleanupComplete = true;
-
-      // use requestAnimationFrame to ensure react state update happens
-      // after any remaining visual updates are scheduled.
-      requestAnimationFrame(() => {
-        isDeleting.current = true;
-        removeTask(taskId);
-      });
-    }; // animate the deleted element
-
-    gsap.to(element, {
-      opacity: 0,
-      x: -100,
-      duration: 0.5,
-      ease: "power2.in",
-      onComplete: () => {
-        gsap.set(element, { display: "none" });
-
-        if (elementsBelowToAnimate.length === 0) {
-          performCleanupAndStateUpdate();
-        }
-      },
-    }); // get tasks below the deleted ele
-
+    // Get tasks below the deleted element
     const tasksBelow = tasks.slice(taskIndex + 1);
     const elementsBelowToAnimate = tasksBelow
       .map((t) => taskRefs.current[t.id])
       .filter(Boolean);
 
-    if (elementsBelowToAnimate.length) {
-      gsap.to(elementsBelowToAnimate, {
+    // Create a timeline for coordinated animations
+    const tl = gsap.timeline({
+      onComplete: () => {
+        // After all animations complete, update state
+        isDeleting.current = true;
+        removeTask(taskId);
+        setDeletingTaskId(null);
+      }
+    });
+
+    // Animate the deleted element out
+    tl.to(element, {
+      opacity: 0,
+      x: -100,
+      duration: 0.5,
+      ease: "power2.in",
+    });
+
+    // If there are elements below, animate them up simultaneously
+    if (elementsBelowToAnimate.length > 0) {
+      tl.to(elementsBelowToAnimate, {
         y: -(elementHeight + gap),
         duration: 0.5,
         ease: "power2.out",
-        onComplete: () => {
-          elementsBelowToAnimate.forEach((el) => {
-            if (el) gsap.set(el, { clearProps: "y" });
-          });
-
-          performCleanupAndStateUpdate();
-        },
-      });
+      }, 0); // Start at the same time as the deleted element animation (time = 0)
     }
   };
 
@@ -379,6 +392,7 @@ export function ToDo() {
                           onDeleteWithAnimation={handleGSAPdelete}
                           taskRefs={taskRefs}
                           tasks={tasks}
+                          isDeleting={deletingTaskId !== null}
                         />
                       </div>
                     ))}

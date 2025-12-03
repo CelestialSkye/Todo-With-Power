@@ -77,8 +77,8 @@ const ChatBox = () => {
                         : "opacity-0 translate-y-4 pointer-events-none"
                     }
                     transition-all duration-300 ease-in-out
-                    w-80 h-112 sm:w-96 sm:h-128
-                    max-w-[90vw]
+                    w-80 h-[28rem] sm:w-96 sm:h-[32rem]
+                    max-w-[90vw] max-h-[80vh]
                 `}
       >
         <div className="w-full h-full flex flex-col rounded-xl shadow-2xl overflow-hidden border border-gray-600 dark:bg-gray-800 dark:border-gray-700 transition-colors duration-600">
