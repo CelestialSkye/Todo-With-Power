@@ -11,11 +11,12 @@ const { getChatCompletion } = require('./groqClient');
 
 
 app.use(helmet({
-  crossOriginResourcePolicy: false // Allow CORS to handle resource policy
+  crossOriginResourcePolicy: false,
+  contentSecurityPolicy: false
 }));
 
 const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173', 'http://localhost:3000'],
+  origin: process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()) || ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
