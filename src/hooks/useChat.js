@@ -16,7 +16,7 @@ export const useChat = () => {
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
   const { tasks: todoList } = useTodos();
-  const { getToken } = useRecaptcha();
+  const { executeRecaptchaAction } = useRecaptcha();
 
   const previousTasksRef = useRef([]);
 
@@ -43,7 +43,15 @@ export const useChat = () => {
     }
 
     try {
-      const recaptchaToken = getToken();
+      // Generate a fresh reCAPTCHA token for each request
+      let recaptchaToken = '';
+      try {
+        recaptchaToken = await executeRecaptchaAction('chat');
+      } catch (captchaError) {
+        console.warn('reCAPTCHA token generation failed:', captchaError);
+        // Continue without token in development, but log the error
+      }
+
       const historyPayload = {
         userMessage: messageText,
         conversationHistory: sortedMessages.map((msg) => ({

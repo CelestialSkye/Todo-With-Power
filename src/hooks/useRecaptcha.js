@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 
-const RECAPTCHA_SITE_KEY = '6LfdDiAsAAAAAA9FWJ-pz0_j1DBAcnY_RYcV9TxN';
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LfdDiAsAAAAAA9FWJ-pz0_j1DBAcnY_RYcV9TxN';
 
 export const useRecaptcha = () => {
   useEffect(() => {
     const loadRecaptcha = async () => {
-      if (window.grecaptcha) {
+      // Check if script already exists
+      if (document.querySelector(`script[src*="google.com/recaptcha"]`)) {
         return;
       }
 
@@ -13,26 +14,34 @@ export const useRecaptcha = () => {
       script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
       script.async = true;
       script.defer = true;
-      document.head.appendChild(script);
+      
+      script.onerror = () => {
+        console.error('Failed to load reCAPTCHA script');
+      };
 
       script.onload = () => {
+        console.log('reCAPTCHA script loaded successfully');
         if (window.grecaptcha) {
           window.grecaptcha.ready(() => {
+            console.log('reCAPTCHA ready');
             executeRecaptcha();
           });
         }
       };
+
+      document.head.appendChild(script);
     };
 
     const executeRecaptcha = () => {
-      if (window.grecaptcha) {
+      if (window.grecaptcha && window.grecaptcha.execute) {
         window.grecaptcha
           .execute(RECAPTCHA_SITE_KEY, { action: 'submit' })
           .then((token) => {
+            console.log('reCAPTCHA token generated successfully');
             sessionStorage.setItem('recaptchaToken', token);
           })
           .catch((error) => {
-            console.error('reCAPTCHA error:', error);
+            console.error('reCAPTCHA execution error:', error);
           });
       }
     };
@@ -46,10 +55,17 @@ export const useRecaptcha = () => {
 
   const executeRecaptchaAction = (action = 'submit') => {
     return new Promise((resolve, reject) => {
-      if (window.grecaptcha) {
+      if (!window.grecaptcha) {
+        console.warn('reCAPTCHA not loaded yet');
+        reject(new Error('reCAPTCHA not loaded'));
+        return;
+      }
+
+      window.grecaptcha.ready(() => {
         window.grecaptcha
           .execute(RECAPTCHA_SITE_KEY, { action })
           .then((token) => {
+            console.log('reCAPTCHA token generated for action:', action);
             sessionStorage.setItem('recaptchaToken', token);
             resolve(token);
           })
@@ -57,9 +73,7 @@ export const useRecaptcha = () => {
             console.error('reCAPTCHA execution error:', error);
             reject(error);
           });
-      } else {
-        reject(new Error('reCAPTCHA not loaded'));
-      }
+      });
     });
   };
 

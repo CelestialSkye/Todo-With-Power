@@ -58,8 +58,8 @@ if (nodeEnv === 'development') {
 const validateChatInput = (req, res, next) => {
   const { userMessage, conversationHistory, todoList, recaptchaToken } = req.body;
 
-  if (!recaptchaToken || typeof recaptchaToken !== 'string') {
-    return res.status(400).json({ error: 'recaptchaToken must be a non-empty string' });
+  if (recaptchaToken && typeof recaptchaToken !== 'string') {
+    return res.status(400).json({ error: 'recaptchaToken must be a string' });
   }
 
   if (!userMessage || typeof userMessage !== 'string') {

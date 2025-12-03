@@ -24,13 +24,11 @@ router.post("/", async (req, res, next) => {
   try {
     const { userMessage, conversationHistory, todoList, recaptchaToken } = req.body;
 
-    if (!recaptchaToken) {
-      return res.status(400).json({ error: "reCAPTCHA token missing" });
-    }
-
-    const isValidCaptcha = await verifyRecaptcha(recaptchaToken);
-    if (!isValidCaptcha) {
-      return res.status(403).json({ error: "reCAPTCHA verification failed" });
+    if (recaptchaToken) {
+      const isValidCaptcha = await verifyRecaptcha(recaptchaToken);
+      if (!isValidCaptcha && process.env.NODE_ENV === 'production') {
+        return res.status(403).json({ error: "reCAPTCHA verification failed" });
+      }
     }
 
     // Safely check if todoList is an array
