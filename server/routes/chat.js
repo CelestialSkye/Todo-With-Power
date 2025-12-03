@@ -2,9 +2,36 @@ const express = require("express");
 const router = express.Router();
 const { getChatCompletion } = require("../groqClient");
 
+const verifyRecaptcha = async (token) => {
+  try {
+    const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`,
+    });
+
+    const data = await response.json();
+    return data.success && data.score > 0.5;
+  } catch (error) {
+    console.error("reCAPTCHA verification error:", error);
+    return false;
+  }
+};
+
 router.post("/", async (req, res, next) => {
   try {
-    const { userMessage, conversationHistory, todoList } = req.body;
+    const { userMessage, conversationHistory, todoList, recaptchaToken } = req.body;
+
+    if (!recaptchaToken) {
+      return res.status(400).json({ error: "reCAPTCHA token missing" });
+    }
+
+    const isValidCaptcha = await verifyRecaptcha(recaptchaToken);
+    if (!isValidCaptcha) {
+      return res.status(403).json({ error: "reCAPTCHA verification failed" });
+    }
 
     // Safely check if todoList is an array
     const validTodoList = Array.isArray(todoList) ? todoList : [];

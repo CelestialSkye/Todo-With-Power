@@ -56,9 +56,12 @@ if (nodeEnv === 'development') {
 }
 
 const validateChatInput = (req, res, next) => {
-  const { userMessage, conversationHistory, todoList } = req.body;
+  const { userMessage, conversationHistory, todoList, recaptchaToken } = req.body;
 
-  // Validate userMessage
+  if (!recaptchaToken || typeof recaptchaToken !== 'string') {
+    return res.status(400).json({ error: 'recaptchaToken must be a non-empty string' });
+  }
+
   if (!userMessage || typeof userMessage !== 'string') {
     return res.status(400).json({ error: 'userMessage must be a non-empty string' });
   }
@@ -67,12 +70,10 @@ const validateChatInput = (req, res, next) => {
     return res.status(400).json({ error: 'Message too long (max 5000 characters)' });
   }
 
-  // Validate conversationHistory
   if (conversationHistory && !Array.isArray(conversationHistory)) {
     return res.status(400).json({ error: 'conversationHistory must be an array' });
   }
 
-  // Validate todoList
   if (todoList && !Array.isArray(todoList)) {
     return res.status(400).json({ error: 'todoList must be an array' });
   }
