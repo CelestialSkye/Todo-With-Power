@@ -15,7 +15,7 @@ export const useChat = () => {
 
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
-  const { tasks: todoList } = useTodos();
+  const { tasks: todoList, addTask } = useTodos();
   const { executeRecaptchaAction } = useRecaptcha();
 
   const previousTasksRef = useRef([]);
@@ -118,7 +118,7 @@ export const useChat = () => {
     } finally {
       setIsApiLoading(false);
     }
-  }, [isApiLoading, sortedMessages, addDocument]);
+   }, [isApiLoading, sortedMessages, addDocument, addTask, todoList]);
 
   useEffect(() => {
     if (
