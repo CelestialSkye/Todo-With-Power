@@ -257,12 +257,17 @@ The "TASK:" lines MUST be on their own lines. **GO.**`;
          }
        }
 
-      // Clean response to remove TASK
-      let cleanedResponse = aiResponseContent.replace(/TASK:\s*.+?(?:\n|$)/gim, '').trim();
-      // Also remove any annotations
-      cleanedResponse = cleanedResponse.replace(/\(NO TASK LINE.*?\)/gi, '').trim();
-      cleanedResponse = cleanedResponse.replace(/\(.*?annotation.*?\)/gi, '').trim();
-      
+      // Clean response - remove TASK lines and template leakage
+      let cleanedResponse = aiResponseContent
+        .replace(/TASK:\s*.+?(?:\n|$)/gim, "")
+        .replace(/\*\*CURRENT EXISTING TASKS[\s\S]*?$/gim, "")
+        .replace(/\*\*EXAMPLES[\s\S]*?$/gim, "")
+        .replace(/---[\s\S]*?---/gim, "")
+        .replace(/⚠️[\s\S]*?$/gim, "")
+        .replace(/\(NO TASK LINE.*?\)/gi, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
       const responsePayload = { 
         response: cleanedResponse, 
         tasksToCreate: tasksToCreate 
