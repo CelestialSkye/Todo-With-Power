@@ -209,84 +209,66 @@ The "TASK:" lines MUST be on their own lines. **GO.**`;
       }
     }
 
-    messages.push({ role: "user", content: userMessage });
+     messages.push({ role: "user", content: userMessage });
 
-     const aiResponseContent = await getChatCompletion(messages);
-     
-     console.log("=== AI RESPONSE DEBUG ===");
-     console.log("Raw AI response:", aiResponseContent);
-     console.log("Response length:", aiResponseContent.length);
-     
-      // Extract tasks from TASK: lines ONLY (strict mode)
-      const tasksToCreate = [];
-      // Only extract explicit TASK: lines - no fallbacks
-      const taskLineRegex = /TASK:\s*(.+?)(?:\n|$)/gim;
-      let match;
-
-      while ((match = taskLineRegex.exec(aiResponseContent)) !== null) {
-        const taskText = match[1].trim();
-        console.log("TASK: line found:", taskText);
-        if (taskText.length > 0 && taskText.length < 200) {
-          // Additional filter: reject obviously invalid tasks
-          const lowercaseTask = taskText.toLowerCase();
-          
-          // Reject responses/meta tasks that aren't real actions
-          const invalidPatterns = [
-            /^respond to/i,
-            /^say /i,
-            /^tell /i,
-            /^answer /i,
-            /^reply/i,
-            /^comment/i,
-            /^acknowledge/i,
-            /^hello/i,
-            /^hi /i,
-            /^hey /i,
-            /^thanks/i,
-            /^thank/i,
-            /^ok/i,
-            /^okay/i,
-            /^fine$/i,
-            /^yes$/i,
-            /^no$/i,
-            /^sure$/i,
-          ];
-          
-          let isValid = true;
-          for (const pattern of invalidPatterns) {
-            if (pattern.test(taskText)) {
-              console.log("REJECTED invalid task:", taskText);
-              isValid = false;
-              break;
-            }
-          }
-          
-          if (isValid) {
-            tasksToCreate.push(taskText);
-            console.log("ACCEPTED task:", taskText);
-          }
-        }
-      }
+      const aiResponseContent = await getChatCompletion(messages);
       
-      console.log("Strict mode: Only TASK: lines extracted + validity filter applied.");
+       // Extract tasks from TASK: lines ONLY (strict mode)
+       const tasksToCreate = [];
+       // Only extract explicit TASK: lines - no fallbacks
+       const taskLineRegex = /TASK:\s*(.+?)(?:\n|$)/gim;
+       let match;
 
-     console.log("Tasks found:", tasksToCreate);
-     console.log("Number of tasks:", tasksToCreate.length);
+       while ((match = taskLineRegex.exec(aiResponseContent)) !== null) {
+         const taskText = match[1].trim();
+         if (taskText.length > 0 && taskText.length < 200) {
+           // Additional filter: reject obviously invalid tasks
+           
+           // Reject responses/meta tasks that aren't real actions
+           const invalidPatterns = [
+             /^respond to/i,
+             /^say /i,
+             /^tell /i,
+             /^answer /i,
+             /^reply/i,
+             /^comment/i,
+             /^acknowledge/i,
+             /^hello/i,
+             /^hi /i,
+             /^hey /i,
+             /^thanks/i,
+             /^thank/i,
+             /^ok/i,
+             /^okay/i,
+             /^fine$/i,
+             /^yes$/i,
+             /^no$/i,
+             /^sure$/i,
+           ];
+           
+           let isValid = true;
+           for (const pattern of invalidPatterns) {
+             if (pattern.test(taskText)) {
+               isValid = false;
+               break;
+             }
+           }
+           
+           if (isValid) {
+             tasksToCreate.push(taskText);
+           }
+         }
+       }
 
-     // Clean response to remove TASK: lines for display
-     const cleanedResponse = aiResponseContent.replace(/TASK:\s*.+?(?:\n|$)/gim, '').trim();
+      // Clean response to remove TASK: lines for display
+      const cleanedResponse = aiResponseContent.replace(/TASK:\s*.+?(?:\n|$)/gim, '').trim();
+      
+      const responsePayload = { 
+        response: cleanedResponse, 
+        tasksToCreate: tasksToCreate 
+      };
 
-     console.log("Cleaned response:", cleanedResponse);
-     
-     const responsePayload = { 
-       response: cleanedResponse, 
-       tasksToCreate: tasksToCreate 
-     };
-     
-     console.log("FINAL RESPONSE PAYLOAD:", JSON.stringify(responsePayload));
-     console.log("======================");
-
-     res.json(responsePayload);
+      res.json(responsePayload);
   } catch (error) {
     console.error("Chat Error:", error);
     next(error); // Pass to error handling middleware

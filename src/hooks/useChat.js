@@ -76,53 +76,34 @@ export const useChat = () => {
       }
 
        const data = await response.json();
-       const aiText =
-         data.response ||
-         "I received an unexpected response from the AI.";
+        const aiText =
+          data.response ||
+          "I received an unexpected response from the AI.";
 
-       console.log("=== FRONTEND TASK CREATION DEBUG ===");
-       console.log("Raw API response data:", data);
-       console.log("Type of data:", typeof data);
-       console.log("Keys in data:", Object.keys(data));
-       console.log("tasksToCreate value:", data.tasksToCreate);
-       console.log("tasksToCreate type:", typeof data.tasksToCreate);
-       console.log("Is array?:", Array.isArray(data.tasksToCreate));
-       console.log("Current todo list:", todoList);
-
-       // handle auto task creation from AI response
-       if (data.tasksToCreate && Array.isArray(data.tasksToCreate) && data.tasksToCreate.length > 0) {
-         console.log("Processing tasks, count:", data.tasksToCreate.length);
-         for (const taskText of data.tasksToCreate) {
-           const trimmedText = String(taskText).trim();
-           console.log("Processing task:", trimmedText);
-           
-           // validation: skip if too short or empty
-           if (trimmedText.length < 3) {
-             console.log("Skipped: too short");
-             continue;
-           }
-           
-           // duplicate prevention
-           const taskExists = todoList && todoList.some(
-             (t) => t.text.toLowerCase() === trimmedText.toLowerCase()
-           );
-           
-           console.log("Task exists check:", taskExists);
-           
-           if (!taskExists) {
-             try {
-               console.log("Creating task:", trimmedText);
-               await addTask(trimmedText);
-               console.log("Task created successfully!");
-             } catch (taskError) {
-               console.error("Error creating task:", taskError);
-             }
-           }
-         }
-       } else {
-         console.log("No tasks to create or invalid format");
-       }
-       console.log("====================================");
+        // handle auto task creation from AI response
+        if (data.tasksToCreate && Array.isArray(data.tasksToCreate) && data.tasksToCreate.length > 0) {
+          for (const taskText of data.tasksToCreate) {
+            const trimmedText = String(taskText).trim();
+            
+            // validation: skip if too short or empty
+            if (trimmedText.length < 3) {
+              continue;
+            }
+            
+            // duplicate prevention
+            const taskExists = todoList && todoList.some(
+              (t) => t.text.toLowerCase() === trimmedText.toLowerCase()
+            );
+            
+            if (!taskExists) {
+              try {
+                await addTask(trimmedText);
+              } catch (taskError) {
+                console.error("Error creating task:", taskError);
+              }
+            }
+          }
+        }
 
       const aiPayload = {
         text: aiText,

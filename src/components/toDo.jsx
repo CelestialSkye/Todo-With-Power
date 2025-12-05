@@ -58,25 +58,25 @@ function SortableTask({
       style={style}
       {...attributes}
       className={`flex items-center gap-2 p-3 rounded-lg border focus:outline-none 
-    transition-all duration-600 ease-out 
+    transition-all duration-300 ease-out 
     ${
       isDragging
-        ? "border-dashed transition-all duration-600 ease-out border-blue-500 bg-blue-50 dark:bg-blue-900  opacity-50 "
-        : "border-gray-600 transition-all duration-600 ease-out dark:border-gray-700 bg-white dark:bg-gray-800 opacity-100"
+        ? "border-dashed transition-all duration-300 ease-out border-blue-500 bg-blue-50 dark:bg-blue-900  opacity-50 "
+        : "border-gray-600 transition-all duration-300 ease-out dark:border-gray-700 bg-white dark:bg-gray-800 opacity-100"
     }`}
       tabIndex={0}
     >
       <div
         {...listeners}
-        className="flex items-center gap-2 flex-1 cursor-grab active:cursor-grabbing min-w-0 transition-all duration-600 ease-out "
+        className="flex items-center gap-2 flex-1 cursor-grab active:cursor-grabbing min-w-0 transition-all duration-300 ease-out "
       >
         <div
-          className={`h-3 w-3 shrink-0 rounded-full transition-all duration-600 ease-out ${
+          className={`h-3 w-3 shrink-0 rounded-full transition-all duration-300 ease-out ${
             task.completed ? "bg-green-500" : "bg-blue-600"
           }`}
         />
         <p
-          className={`flex-1 min-w-0 break-words font-medium text-sm transition-all duration-600 ease-out ${
+          className={`flex-1 min-w-0 break-words font-medium text-sm transition-all duration-300 ease-out ${
             task.completed
               ? "line-through text-gray-400 dark:text-gray-500"
               : "text-gray-900 dark:text-white"
@@ -87,6 +87,7 @@ function SortableTask({
       </div>
 
       <button
+        aria-label="Delete"
         onClick={(e) => {
           e.stopPropagation();
           if (!isDeleting) {
@@ -94,15 +95,16 @@ function SortableTask({
           }
         }}
         disabled={isDeleting}
-        className="px-3 py-1 rounded-full text-sm text-red-600 dark:text-red-400 hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] dark:hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] font-medium transition-all duration-600 ease-out disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-3 py-1 rounded-full text-sm text-red-600 dark:text-red-400 hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] dark:hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] font-medium transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <MdDelete size={20} />{" "}
       </button>
       <button
+        aria-label="Complete Task"
         onClick={(e) => {
           onComplete(task.id, task.completed);
         }}
-        className="px-3 py-1 rounded-full text-sm text-green-600 dark:text-green-400 hover:shadow-[0_0_8px_2px_rgba(34,197,94,0.6)]  dark:hover:shadow-[0_0_8px_2px_rgba(34,197,94,0.6)] font-medium transition-all duration-600 ease-out"
+        className="px-3 py-1 rounded-full text-sm text-green-600 dark:text-green-400 hover:shadow-[0_0_8px_2px_rgba(34,197,94,0.6)]  dark:hover:shadow-[0_0_8px_2px_rgba(34,197,94,0.6)] font-medium transition-all duration-300 ease-out"
       >
         <IoIosCheckmarkCircle size={20} />
       </button>
@@ -201,7 +203,7 @@ export function ToDo() {
     if (isDeleting.current) {
       isDeleting.current = false;
       prevTaskCount.current = tasks.length;
-      
+
       // Clear all transforms after delete completes and React re-renders
       const allElements = Object.values(taskRefs.current).filter(Boolean);
       allElements.forEach((el) => {
@@ -244,7 +246,7 @@ export function ToDo() {
   const handleGSAPdelete = (taskId) => {
     // Prevent multiple deletes at once
     if (deletingTaskId) return;
-    
+
     const element = taskRefs.current[taskId];
     const taskIndex = tasks.findIndex((t) => t.id === taskId);
 
@@ -252,7 +254,7 @@ export function ToDo() {
 
     if (element.dataset.deleting === "true") return;
     element.dataset.deleting = "true";
-    
+
     setDeletingTaskId(taskId);
 
     const elementHeight = element.offsetHeight;
@@ -271,7 +273,7 @@ export function ToDo() {
         isDeleting.current = true;
         removeTask(taskId);
         setDeletingTaskId(null);
-      }
+      },
     });
 
     // Animate the deleted element out
@@ -284,11 +286,15 @@ export function ToDo() {
 
     // If there are elements below, animate them up simultaneously
     if (elementsBelowToAnimate.length > 0) {
-      tl.to(elementsBelowToAnimate, {
-        y: -(elementHeight + gap),
-        duration: 0.5,
-        ease: "power2.out",
-      }, 0); // Start at the same time as the deleted element animation (time = 0)
+      tl.to(
+        elementsBelowToAnimate,
+        {
+          y: -(elementHeight + gap),
+          duration: 0.5,
+          ease: "power2.out",
+        },
+        0
+      ); // Start at the same time as the deleted element animation (time = 0)
     }
   };
 
@@ -308,6 +314,7 @@ export function ToDo() {
               />
             </div>
             <button
+              aria-label="Theme Switch"
               ref={buttonRef}
               onClick={handleThemeChange}
               className="p-2 rounded-lg border border-gray-600 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600  transition-colors"
@@ -323,11 +330,12 @@ export function ToDo() {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
               placeholder="Enter something..."
-              className="flex-1 px-4 py-2 rounded-lg border border-gray-600 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] dark:focus:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] transition-all duration-600 ease-out"
+              className="flex-1 px-4 py-2 rounded-lg border border-gray-600 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] dark:focus:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] transition-all duration-300 ease-out"
             />
             <button
+              aria-label="Add Task"
               onClick={handleAddTask}
-              className="px-6 py-2 rounded-lg font-medium transition-all duration-600 ease-out 
+              className="px-6 py-2 rounded-lg font-medium transition-all duration-300 ease-out 
                border border-gray-600 dark:border-gray-700 
                
                bg-white dark:bg-gray-800 
@@ -343,6 +351,7 @@ export function ToDo() {
           </div>
 
           <button
+            aria-label="Delete all"
             onClick={(e) => {
               e.stopPropagation();
               removeAllTasks();

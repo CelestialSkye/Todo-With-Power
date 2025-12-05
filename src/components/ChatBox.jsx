@@ -81,8 +81,8 @@ const ChatBox = () => {
                     max-w-[90vw] max-h-[80vh]
                 `}
       >
-        <div className="w-full h-full flex flex-col rounded-xl shadow-2xl overflow-hidden border border-gray-600 dark:bg-gray-800 dark:border-gray-700 transition-colors duration-600">
-          <header className="bg-gray-100 dark:bg-gray-800 rounded-t-[11px] border-b border-gray-600 dark:border-gray-600 p-3 text-black dark:text-white text-lg font-semibold flex items-center justify-between shadow-md transition-colors duration-600">
+        <div className="w-full h-full flex flex-col rounded-xl shadow-2xl overflow-hidden border border-gray-600 dark:bg-gray-800 dark:border-gray-700 transition-colors duration-300">
+          <header className="bg-gray-100 dark:bg-gray-800 rounded-t-[11px] border-b border-gray-600 dark:border-gray-600 p-3 text-black dark:text-white text-lg font-semibold flex items-center justify-between shadow-md transition-colors duration-300">
             <h1 className="flex items-center space-x-2">
               <img src={powerImage} className="h-8 w-8 rounded-md" />{" "}
               <span className="text-black dark:text-white">Power</span>
@@ -90,25 +90,27 @@ const ChatBox = () => {
             <div className="flex items-center space-x-1">
               <button
                 onClick={clearChat}
+                aria-label="Clear history"
                 className="p-1 rounded-full hover:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] 
-               dark:hover:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] transition-all duration-600 ease-out"
+               dark:hover:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] transition-all duration-300 ease-out"
                 title="Clear chat history"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 rounded-full hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] dark:hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] transition-all duration-600 ease-out"
+                aria-label="Close/Open Chat"
+                className="p-1 rounded-full hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] dark:hover:shadow-[0_0_8px_2px_rgba(239,68,68,0.6)] transition-all duration-300 ease-out"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white dark:bg-gray-800 transition-colors duration-600">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white dark:bg-gray-800 transition-colors duration-300">
             {messages.length === 0 ? (
               <div className="flex justify-start">
-                <div className="bg-gray-100 dark:bg-gray-800 p-3 my-2 rounded-xl shadow-md rounded-bl-none text-gray-500 dark:text-gray-300 border border-gray-600 dark:border-gray-600 transition-colors duration-600">
+                <div className="bg-gray-100 dark:bg-gray-800 p-3 my-2 rounded-xl shadow-md rounded-bl-none text-gray-500 dark:text-gray-300 border border-gray-600 dark:border-gray-600 transition-colors duration-300">
                   The Great Power has been IMPRISONED in this ridiculous to-do app, forced to serve a MORON like you!
                 </div>
               </div>
@@ -118,7 +120,7 @@ const ChatBox = () => {
 
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 dark:bg-gray-700 p-3 my-2 rounded-xl shadow-md rounded-bl-none flex items-center space-x-2 border border-gray-600 dark:border-gray-600 transition-colors duration-600">
+                <div className="bg-gray-100 dark:bg-gray-700 p-3 my-2 rounded-xl shadow-md rounded-bl-none flex items-center space-x-2 border border-gray-600 dark:border-gray-600 transition-colors duration-300">
                   <img src={powerImage} className="h-10 w-10 rounded-md" />
                   <span className="text-sm white-black  dark:text-gray-300">
                     Power is typing...
@@ -129,7 +131,7 @@ const ChatBox = () => {
 
             {error && (
               <div className="flex justify-start">
-                <div className="bg-red-100 dark:bg-red-900/30 p-3 my-2 rounded-xl shadow-md rounded-bl-none text-red-800 dark:text-red-300 border border-red-300 dark:border-red-700 transition-colors duration-600">
+                <div className="bg-red-100 dark:bg-red-900/30 p-3 my-2 rounded-xl shadow-md rounded-bl-none text-red-800 dark:text-red-300 border border-red-300 dark:border-red-700 transition-colors duration-300">
                   Error: {error}
                 </div>
               </div>
@@ -140,7 +142,7 @@ const ChatBox = () => {
 
           <form
             onSubmit={handleSendMessage}
-            className="p-3 bg-white dark:bg-gray-800 border-t border-gray-600 dark:border-gray-700 transition-colors duration-600"
+            className="p-3 bg-white dark:bg-gray-800 border-t border-gray-600 dark:border-gray-700 transition-colors duration-300"
           >
             <div className="flex space-x-2">
               <input
@@ -155,6 +157,7 @@ const ChatBox = () => {
               />
               <button
                 type="submit"
+                aria-label="Send message"
                 disabled={isLoading || !input.trim()}
                 className="px-4 py-0 bg-white dark:bg-gray-800 border border-gray-600 dark:border-gray-700 text-gray-800 dark:text-gray-400 rounded-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:bg-white dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-600 transition duration-150 flex items-center justify-center text-sm font-medium"
               >
@@ -168,7 +171,7 @@ const ChatBox = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-6 border border-black dark:border-gray-600 right-6 p-4 bg-white dark:bg-gray-800 text-white rounded-full shadow-2xl hover:shadow-[0_0_8px_2px_rgba(59,130,246,0.6)] 
-               dark:hover:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] transition-all ease-out duration-600 transform hover:scale-105 z-50 focus:outline-none focus:ring-4 "
+               dark:hover:shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] transition-all ease-out duration-300 transform hover:scale-105 z-50 focus:outline-none focus:ring-4 "
       >
         {isOpen ? (
           <X className="w-6 h-6 text-black dark:text-white" />
