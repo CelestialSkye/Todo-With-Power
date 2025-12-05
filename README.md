@@ -39,8 +39,8 @@ A to-do list application where you write your daily tasks while being tormented 
 
 1. Clone the repository:
 ```bash
-git clone <your-repo-url>
-cd my-project
+git clone https://github.com/CelestialSkye/Todo-With-Power.git
+cd Todo-With-Power
 ```
 
 2. Install dependencies:

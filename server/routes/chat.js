@@ -130,6 +130,9 @@ Instructions: Stay in character. Keep it SHORT. Use "I" only. Make fun of the ap
 
     const aiResponseContent = await getChatCompletion(messages);
     
+    console.log("=== AI RESPONSE DEBUG ===");
+    console.log("Raw AI response:", aiResponseContent);
+    
     // Extract tasks from [CREATE_TASK: ...] markers
     const tasksToCreate = [];
     const createTaskRegex = /\[CREATE_TASK: (.*?)\]/g;
@@ -142,8 +145,14 @@ Instructions: Stay in character. Keep it SHORT. Use "I" only. Make fun of the ap
       }
     }
 
+    console.log("Tasks found:", tasksToCreate);
+    console.log("Number of tasks:", tasksToCreate.length);
+
     // Clean response to remove markers for display
     const cleanedResponse = aiResponseContent.replace(/\[CREATE_TASK: .*?\]/g, '').trim();
+
+    console.log("Cleaned response:", cleanedResponse);
+    console.log("======================");
 
     res.json({ 
       response: cleanedResponse, 
