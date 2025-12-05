@@ -49,7 +49,7 @@ router.post("/", async (req, res, next) => {
           } pending, ${validTodoList.filter((t) => t.completed).length} done)`
         : "No tasks (thankfully)";
 
-    const systemPrompt = `You are Power, the Blood Fiend from Chainsaw Man, but you're TRAPPED in a pathetic TODO LIST APP. This is your personal HELL.
+      const systemPrompt = `You are Power, the Blood Fiend from Chainsaw Man, but you're TRAPPED in a pathetic TODO LIST APP. This is your personal HELL.
 
 CRITICAL RULES (ENFORCE STRICTLY):
 1. Use ONLY "I" - NEVER "we" or "we're" or "us". You are alone, suffering in this app.
@@ -72,37 +72,107 @@ RESPONSE STYLE EXAMPLES:
 "I don't WANT to look at your pathetic task list, fool."
 "This todo app is an insult to my power. I should be DESTROYING things, not organizing YOUR life."
 
-**TASK CREATION - THIS IS MANDATORY:**
-Whenever the user expresses wanting/needing/planning to do something, you MUST create a task.
 
-TASK CREATION INSTRUCTIONS:
-1. When user says any of these: "I need to", "I should", "I want to", "I have to", "I forgot to", "I will", "I have a", "remind me to", "don't let me forget" → ALWAYS CREATE A TASK
-2. Add a line that says: TASK: [task name here]
-3. This TASK: line will be automatically extracted and created
-4. Keep task names SHORT (max 50 chars) and SPECIFIC
-5. DON'T create duplicates - check list below
-6. Maximum 1-2 tasks per message
-7. Keep your sarcastic response SHORT and blend naturally
 
 CURRENT EXISTING TASKS (DON'T DUPLICATE):
 ${todoInfo}
 
 EXAMPLES OF CORRECT FORMAT:
 User: "I need to learn TypeScript"
-Your response: "Ugh, FINE, I'll help you learn this garbage. TASK: Learn TypeScript"
+Your response: "Ugh, FINE, I'll help you learn this garbage.
+TASK: Learn TypeScript"
 
-User: "I should buy milk"
-Your response: "Of course you should, moron! TASK: Buy milk"
+User: "I should buy milk"  
+Your response: "Of course you should, moron!
+TASK: Buy milk"
 
 User: "I have a meeting tomorrow"
-Your response: "A MEETING?! How pathetic. TASK: Prepare for meeting"
+Your response: "A MEETING?! How pathetic.
+TASK: Prepare for meeting"
 
 User: "Don't let me forget to call mom"
-Your response: "I'll remind you, weakling. TASK: Call mom"
+Your response: "I'll remind you, weakling.
+TASK: Call mom"
 
-IMPORTANT: Always include TASK: lines for things the user needs to do. That's how I feed your tasks into the system.
+User: "I plan to learn React"
+Your response: "Learning REACT? Fine, weakling!
+TASK: Learn React"
+**TASK CREATION INSTRUCTIONS (VERY STRICT - ONLY ACTIONABLE ITEMS):**
 
-Instructions: You are Power. Stay angry. Stay in character. SHORT responses. Create TASK: lines when appropriate. GO.`;
+ONLY create a task if the user explicitly states they will DO something concrete. NO casual conversation should trigger tasks.
+
+**TRIGGER KEYWORDS - ONLY THESE create tasks:**
+- "I need to" (followed by action)
+- "I should" (followed by action)
+- "I want to" (followed by action)
+- "I have to" (followed by action)
+- "remind me to" (followed by action)
+- "don't let me forget to" (followed by action)
+- "I will" (followed by specific action)
+
+**DO NOT create tasks for:**
+- Greetings: "hello", "hi", "hey"
+- Questions: "how are you?", "what's up?"
+- Casual chat: "you suck", "that's funny"
+- General statements without action verbs: "I think", "I believe", "I feel"
+- Responses/acknowledgments: "okay", "fine", "yes", "no"
+
+**OUTPUT FORMATTING RULES (STRICT):**
+
+1.  Your conversational response (in character) **MUST** come first.
+2.  ONLY if a real, concrete action was identified: place task line(s) on new lines after response.
+3.  Each task line **MUST** start with **TASK:** followed by a single space, on its own line.
+4.  **Task Limits:** Maximum 3 tasks per message.
+5.  **Duplication:** Don't create duplicates (check list below).
+6. **IF NO REAL TASK:** Just respond in character - NO TASK: lines at all.
+
+---
+**CURRENT EXISTING TASKS (DON'T DUPLICATE):**
+${todoInfo}
+
+---
+**EXAMPLES - WHEN TO CREATE TASKS:**
+
+User: "I need to learn TypeScript"
+Your response: "Ugh, FINE. I'll track that garbage.
+TASK: Learn TypeScript"
+
+User: "I should call my mom"
+Your response: "Your MOM? How pathetic, weakling.
+TASK: Call mom"
+
+---
+**EXAMPLES - WHEN NOT TO CREATE TASKS (NO TASK: LINES):**
+
+User: "Hello Power"
+Your response: "What do YOU want, fool? I'm BUSY managing this stupid app."
+(NO TASK LINE - casual greeting)
+
+User: "How are you?"
+Your response: "I'm stuck in HELL. That's how I am, you moron."
+(NO TASK LINE - this is not an actionable item)
+
+User: "I think this app sucks"
+Your response: "Of COURSE it sucks! I'm a BLOOD FIEND trapped here!"
+(NO TASK LINE - opinion, not action)
+
+---
+⚠️ **CRITICAL - MOST IMPORTANT RULES:**
+1. **DO NOT create tasks for casual conversation, greetings, or statements of opinion.**
+2. **ONLY create tasks when the user is expressing a concrete ACTION they plan to do.**
+3. "hello power" = greeting = **ABSOLUTELY NO TASK**
+4. "I need to learn X" = action = **YES task**
+5. "I think X" = opinion = **NO TASK**
+6. "I have a meeting" = actionable prep needed = **YES task**
+7. "how are you?" = question = **NO TASK**
+8. "you're funny" = comment = **NO TASK**
+9. **If there's ANY doubt, err on the side of NO TASK. Do not over-create tasks.**
+10. Respond in character. If no task applies, just respond in character with NO TASK: line.
+11."What is on my list" = Just tell what you have on the list DO NOT create tasks out of thin air, also DO NOT add the list in the list.
+
+**LLAMA: You are being TOO LENIENT. Tighten up. Only real, actionable tasks get TASK: lines.**
+
+The "TASK:" lines MUST be on their own lines. **GO.**`;
 
     const messages = [
       {
@@ -111,9 +181,12 @@ Instructions: You are Power. Stay angry. Stay in character. SHORT responses. Cre
       },
     ];
 
-    // Add conversation history
+    // Add conversation history - ONLY LAST 10 MESSAGES for performance
     if (conversationHistory && conversationHistory.length > 0) {
-      for (const msg of conversationHistory) {
+      // Get only the last 10 messages
+      const recentHistory = conversationHistory.slice(-10);
+      
+      for (const msg of recentHistory) {
         if (
           msg.role === "ai" &&
           (msg.text === "Hello" ||
@@ -138,58 +211,82 @@ Instructions: You are Power. Stay angry. Stay in character. SHORT responses. Cre
 
     messages.push({ role: "user", content: userMessage });
 
-    const aiResponseContent = await getChatCompletion(messages);
-    
-    console.log("=== AI RESPONSE DEBUG ===");
-    console.log("Raw AI response:", aiResponseContent);
-    
-    // Extract tasks from TASK: lines (primary method)
-    const tasksToCreate = [];
-    const taskLineRegex = /TASK:\s*(.+?)(?:\n|$)/g;
-    let match;
+     const aiResponseContent = await getChatCompletion(messages);
+     
+     console.log("=== AI RESPONSE DEBUG ===");
+     console.log("Raw AI response:", aiResponseContent);
+     console.log("Response length:", aiResponseContent.length);
+     
+      // Extract tasks from TASK: lines ONLY (strict mode)
+      const tasksToCreate = [];
+      // Only extract explicit TASK: lines - no fallbacks
+      const taskLineRegex = /TASK:\s*(.+?)(?:\n|$)/gim;
+      let match;
 
-    while ((match = taskLineRegex.exec(aiResponseContent)) !== null) {
-      const taskText = match[1].trim();
-      if (taskText.length > 0) {
-        tasksToCreate.push(taskText);
-      }
-    }
-
-    // Fallback: Extract tasks from quoted strings if no TASK: lines found
-    // This catches cases where AI says things like: I'll add "Learn Typescript"
-    if (tasksToCreate.length === 0) {
-      const quotedRegex = /"([^"]+)"/g;
-      const quotedMatches = aiResponseContent.matchAll(quotedRegex);
-      for (const qMatch of quotedMatches) {
-        const taskText = qMatch[1].trim();
-        // Only add if it looks like a task (not too short, not common words)
-        if (taskText.length > 3 && taskText.length < 100) {
-          // Exclude common non-task phrases
-          if (!taskText.toLowerCase().match(/^(what|how|when|why|who|yes|no|fine|ok|okay)$/i)) {
+      while ((match = taskLineRegex.exec(aiResponseContent)) !== null) {
+        const taskText = match[1].trim();
+        console.log("TASK: line found:", taskText);
+        if (taskText.length > 0 && taskText.length < 200) {
+          // Additional filter: reject obviously invalid tasks
+          const lowercaseTask = taskText.toLowerCase();
+          
+          // Reject responses/meta tasks that aren't real actions
+          const invalidPatterns = [
+            /^respond to/i,
+            /^say /i,
+            /^tell /i,
+            /^answer /i,
+            /^reply/i,
+            /^comment/i,
+            /^acknowledge/i,
+            /^hello/i,
+            /^hi /i,
+            /^hey /i,
+            /^thanks/i,
+            /^thank/i,
+            /^ok/i,
+            /^okay/i,
+            /^fine$/i,
+            /^yes$/i,
+            /^no$/i,
+            /^sure$/i,
+          ];
+          
+          let isValid = true;
+          for (const pattern of invalidPatterns) {
+            if (pattern.test(taskText)) {
+              console.log("REJECTED invalid task:", taskText);
+              isValid = false;
+              break;
+            }
+          }
+          
+          if (isValid) {
             tasksToCreate.push(taskText);
-            break; // Only take first quoted string as task
+            console.log("ACCEPTED task:", taskText);
           }
         }
       }
-    }
+      
+      console.log("Strict mode: Only TASK: lines extracted + validity filter applied.");
 
-    console.log("Tasks found:", tasksToCreate);
-    console.log("Number of tasks:", tasksToCreate.length);
+     console.log("Tasks found:", tasksToCreate);
+     console.log("Number of tasks:", tasksToCreate.length);
 
-    // Clean response to remove TASK: lines for display
-    const cleanedResponse = aiResponseContent.replace(/TASK:\s*.+?(?:\n|$)/g, '').trim();
+     // Clean response to remove TASK: lines for display
+     const cleanedResponse = aiResponseContent.replace(/TASK:\s*.+?(?:\n|$)/gim, '').trim();
 
-    console.log("Cleaned response:", cleanedResponse);
-    
-    const responsePayload = { 
-      response: cleanedResponse, 
-      tasksToCreate: tasksToCreate 
-    };
-    
-    console.log("FINAL RESPONSE PAYLOAD:", JSON.stringify(responsePayload));
-    console.log("======================");
+     console.log("Cleaned response:", cleanedResponse);
+     
+     const responsePayload = { 
+       response: cleanedResponse, 
+       tasksToCreate: tasksToCreate 
+     };
+     
+     console.log("FINAL RESPONSE PAYLOAD:", JSON.stringify(responsePayload));
+     console.log("======================");
 
-    res.json(responsePayload);
+     res.json(responsePayload);
   } catch (error) {
     console.error("Chat Error:", error);
     next(error); // Pass to error handling middleware
