@@ -6,11 +6,16 @@
     <link rel="icon" type="image/jpeg" href="/favi.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>list-locker</title>
+    
+    <meta property="og:title" content="list-locker" />
+    <meta property="og:description" content="A powerful AI-powered todo list app" />
+    <meta property="og:image" content="/favi.jpg" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="/favi.jpg" />
     <script>
-      // Apply theme class before React renders to prevent flash
       try {
         const theme = localStorage.getItem('theme');
-        // Let next-themes handle the dark class
         if (theme === 'dark') {
           document.documentElement.setAttribute('class', 'dark');
         } else {
