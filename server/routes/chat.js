@@ -180,12 +180,16 @@ Instructions: You are Power. Stay angry. Stay in character. SHORT responses. Cre
     const cleanedResponse = aiResponseContent.replace(/TASK:\s*.+?(?:\n|$)/g, '').trim();
 
     console.log("Cleaned response:", cleanedResponse);
-    console.log("======================");
-
-    res.json({ 
+    
+    const responsePayload = { 
       response: cleanedResponse, 
       tasksToCreate: tasksToCreate 
-    });
+    };
+    
+    console.log("FINAL RESPONSE PAYLOAD:", JSON.stringify(responsePayload));
+    console.log("======================");
+
+    res.json(responsePayload);
   } catch (error) {
     console.error("Chat Error:", error);
     next(error); // Pass to error handling middleware

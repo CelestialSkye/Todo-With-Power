@@ -81,8 +81,12 @@ export const useChat = () => {
          "I received an unexpected response from the AI.";
 
        console.log("=== FRONTEND TASK CREATION DEBUG ===");
-       console.log("API response data:", data);
-       console.log("tasksToCreate array:", data.tasksToCreate);
+       console.log("Raw API response data:", data);
+       console.log("Type of data:", typeof data);
+       console.log("Keys in data:", Object.keys(data));
+       console.log("tasksToCreate value:", data.tasksToCreate);
+       console.log("tasksToCreate type:", typeof data.tasksToCreate);
+       console.log("Is array?:", Array.isArray(data.tasksToCreate));
        console.log("Current todo list:", todoList);
 
        // handle auto task creation from AI response
