@@ -74,17 +74,38 @@ export const useChat = () => {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const data = await response.json();
-      const aiText =
-        data.response ||
-        "I received an unexpected response from the AI.";
+       const data = await response.json();
+       const aiText =
+         data.response ||
+         "I received an unexpected response from the AI.";
 
-      const aiPayload = {
-        text: aiText,
-        role: "ai",
-        createdAt: new Date().toISOString(),
-      };
-      await addDocument(aiPayload);
+       // Handle auto task creation from AI response
+       if (data.tasksToCreate && data.tasksToCreate.length > 0) {
+         for (const taskText of data.tasksToCreate) {
+           const trimmedText = taskText.trim();
+           
+           // Validation: skip if too short or empty
+           if (trimmedText.length < 3) {
+             continue;
+           }
+           
+           // Duplicate prevention: check if task already exists
+           const taskExists = todoList.some(
+             (t) => t.text.toLowerCase() === trimmedText.toLowerCase()
+           );
+           
+           if (!taskExists) {
+             await addTask(trimmedText);
+           }
+         }
+       }
+
+       const aiPayload = {
+         text: aiText,
+         role: "ai",
+         createdAt: new Date().toISOString(),
+       };
+       await addDocument(aiPayload);
     } catch (error) {
       console.error("API Error:", error);
       setApiError(`AI Error: ${error.message}. Check the console.`);
