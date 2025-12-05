@@ -257,7 +257,7 @@ The "TASK:" lines MUST be on their own lines. **GO.**`;
          }
        }
 
-      // Clean response - remove TASK lines and template leakage
+      // Clean response - remove TASK lines, template leakage, and task list output
       let cleanedResponse = aiResponseContent
         .replace(/TASK:\s*.+?(?:\n|$)/gim, "")
         .replace(/\*\*CURRENT EXISTING TASKS[\s\S]*?$/gim, "")
@@ -265,6 +265,10 @@ The "TASK:" lines MUST be on their own lines. **GO.**`;
         .replace(/---[\s\S]*?---/gim, "")
         .replace(/⚠️[\s\S]*?$/gim, "")
         .replace(/\(NO TASK LINE.*?\)/gi, "")
+        // Remove "Current tasks:" section that might be output
+        .replace(/Current tasks?:[\s\S]*?(?:\(\d+|$)/gim, "")
+        // Remove task list patterns like "[✓] Task | [✓] Task"
+        .replace(/\[\s*[✓✗×\-]\s*\][^[\n]*/gim, "")
         .replace(/\s+/g, " ")
         .trim();
 
