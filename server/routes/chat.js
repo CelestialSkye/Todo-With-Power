@@ -143,7 +143,7 @@ Instructions: You are Power. Stay angry. Stay in character. SHORT responses. Cre
     console.log("=== AI RESPONSE DEBUG ===");
     console.log("Raw AI response:", aiResponseContent);
     
-    // Extract tasks from TASK: lines
+    // Extract tasks from TASK: lines (primary method)
     const tasksToCreate = [];
     const taskLineRegex = /TASK:\s*(.+?)(?:\n|$)/g;
     let match;
@@ -152,6 +152,24 @@ Instructions: You are Power. Stay angry. Stay in character. SHORT responses. Cre
       const taskText = match[1].trim();
       if (taskText.length > 0) {
         tasksToCreate.push(taskText);
+      }
+    }
+
+    // Fallback: Extract tasks from quoted strings if no TASK: lines found
+    // This catches cases where AI says things like: I'll add "Learn Typescript"
+    if (tasksToCreate.length === 0) {
+      const quotedRegex = /"([^"]+)"/g;
+      const quotedMatches = aiResponseContent.matchAll(quotedRegex);
+      for (const qMatch of quotedMatches) {
+        const taskText = qMatch[1].trim();
+        // Only add if it looks like a task (not too short, not common words)
+        if (taskText.length > 3 && taskText.length < 100) {
+          // Exclude common non-task phrases
+          if (!taskText.toLowerCase().match(/^(what|how|when|why|who|yes|no|fine|ok|okay)$/i)) {
+            tasksToCreate.push(taskText);
+            break; // Only take first quoted string as task
+          }
+        }
       }
     }
 
