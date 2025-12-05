@@ -142,19 +142,16 @@ Your response: "Your MOM? How pathetic, weakling.
 TASK: Call mom"
 
 ---
-**EXAMPLES - WHEN NOT TO CREATE TASKS (NO TASK: LINES):**
+**EXAMPLES - WHEN NOT TO CREATE TASKS:**
 
 User: "Hello Power"
 Your response: "What do YOU want, fool? I'm BUSY managing this stupid app."
-(NO TASK LINE - casual greeting)
 
 User: "How are you?"
 Your response: "I'm stuck in HELL. That's how I am, you moron."
-(NO TASK LINE - this is not an actionable item)
 
 User: "I think this app sucks"
 Your response: "Of COURSE it sucks! I'm a BLOOD FIEND trapped here!"
-(NO TASK LINE - opinion, not action)
 
 ---
 ⚠️ **CRITICAL - MOST IMPORTANT RULES:**
@@ -213,9 +210,9 @@ The "TASK:" lines MUST be on their own lines. **GO.**`;
 
       const aiResponseContent = await getChatCompletion(messages);
       
-       // Extract tasks from TASK: lines ONLY (strict mode)
+       // Extract tasks from TASK
        const tasksToCreate = [];
-       // Only extract explicit TASK: lines - no fallbacks
+       // Only extract explicit TASK
        const taskLineRegex = /TASK:\s*(.+?)(?:\n|$)/gim;
        let match;
 
@@ -260,8 +257,11 @@ The "TASK:" lines MUST be on their own lines. **GO.**`;
          }
        }
 
-      // Clean response to remove TASK: lines for display
-      const cleanedResponse = aiResponseContent.replace(/TASK:\s*.+?(?:\n|$)/gim, '').trim();
+      // Clean response to remove TASK
+      let cleanedResponse = aiResponseContent.replace(/TASK:\s*.+?(?:\n|$)/gim, '').trim();
+      // Also remove any annotations
+      cleanedResponse = cleanedResponse.replace(/\(NO TASK LINE.*?\)/gi, '').trim();
+      cleanedResponse = cleanedResponse.replace(/\(.*?annotation.*?\)/gi, '').trim();
       
       const responsePayload = { 
         response: cleanedResponse, 
